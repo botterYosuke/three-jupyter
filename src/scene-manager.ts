@@ -24,16 +24,18 @@ export class SceneManager {
 
     // シーンの作成
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x1e1e2e);
+    this.scene.background = new THREE.Color(0x778C97);
 
     // カメラの作成
     this.camera = new THREE.PerspectiveCamera(
-      75,
+      60,
       container.clientWidth / container.clientHeight,
       0.1,
-      1000
+      10000
     );
-    this.camera.position.z = 5;
+    this.camera.position.set(0, 1200, 0); // XZ平面を俯瞰するため上空に配置
+    this.camera.lookAt(0, 0, 0); // カメラを原点（XZ平面）に向ける
+    this.camera.up.set(0, 0, -1); // Z軸負方向を上として設定
 
     // WebGLレンダラーの作成
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -64,6 +66,9 @@ export class SceneManager {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
+    this.controls.enableRotate = false;
+    // 左クリックにも pan を割り当て
+    this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
 
     // 簡単な照明を追加
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
