@@ -69,9 +69,24 @@
   color: white;
 }
 
+.three-jupyter-container .status-indicator.initializing {
+  background-color: #f59e0b;
+  color: white;
+  animation: pulse 2s ease-in-out infinite;
+}
+
 .three-jupyter-container .status-indicator.not-ready {
   background-color: #ef4444;
   color: white;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .three-jupyter-container .code-section,

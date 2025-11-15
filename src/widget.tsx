@@ -9,35 +9,87 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
   const [output, setOutput] = useState<string>('');
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [isKernelReady, setIsKernelReady] = useState<boolean>(false);
+  const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const kernelRef = useRef<Kernel.IKernelConnection | null>(null);
   const kernelManagerRef = useRef<KernelManager | null>(null);
+  const initializationAttemptedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    // Kernel Managerを初期化
-    kernelManagerRef.current = new KernelManager();
-    startKernel();
+    // 起動直後のAPIエラーを避けるため、少し遅延させてから初期化
+    const initTimer = setTimeout(() => {
+      if (!initializationAttemptedRef.current) {
+        initializationAttemptedRef.current = true;
+        startKernel();
+      }
+    }, 1000); // 1秒待ってから初期化
 
     // クリーンアップ
     return () => {
+      clearTimeout(initTimer);
       stopKernel();
     };
   }, []);
 
+  /**
+   * カーネルを起動する（リトライ付き）
+   * startNew()の呼び出し時に/api/kernelsが呼ばれる可能性があるため、
+   * エラーが発生した場合はリトライする
+   */
+  const startKernelWithRetry = async (
+    manager: KernelManager,
+    retries: number = 3,
+    delay: number = 1000
+  ): Promise<Kernel.IKernelConnection> => {
+    let lastError: Error | null = null;
+    
+    for (let i = 0; i < retries; i++) {
+      try {
+        // カーネルを起動（デフォルトはpython3）
+        // この呼び出しで/api/kernelsが呼ばれる可能性がある
+        const kernel = await manager.startNew({
+          name: 'python3'
+        });
+        return kernel;
+      } catch (err: any) {
+        lastError = err;
+        const isLastAttempt = i === retries - 1;
+        if (isLastAttempt) {
+          break;
+        }
+        console.warn(`カーネル起動試行 ${i + 1}/${retries} 失敗:`, err.message);
+        // 指数バックオフでリトライ
+        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+      }
+    }
+    
+    // すべてのリトライが失敗した場合
+    throw new Error(
+      `カーネルの起動に失敗しました (${retries}回試行): ${lastError?.message || '不明なエラー'}`
+    );
+  };
+
   const startKernel = async () => {
+    if (isInitializing) {
+      return; // 既に初期化中
+    }
+
+    setIsInitializing(true);
+    setError('');
+    setOutput((prev: string) => prev + 'Kernel を起動中...\n');
+
     try {
+      // KernelManagerを初期化（同期的なのでエラーは発生しない）
       if (!kernelManagerRef.current) {
         kernelManagerRef.current = new KernelManager();
       }
 
-      // カーネルを起動（デフォルトはpython3）
-      const kernel = await kernelManagerRef.current.startNew({
-        name: 'python3'
-      });
+      // カーネルを起動（リトライ付き）
+      const kernel = await startKernelWithRetry(kernelManagerRef.current);
 
       kernelRef.current = kernel;
       setIsKernelReady(true);
-      setOutput('Kernel が起動しました。\n');
+      setOutput((prev: string) => prev + 'Kernel が起動しました。\n');
       setError('');
 
       // カーネルの状態変更を監視
@@ -48,8 +100,12 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
         }
       });
     } catch (err: any) {
-      setError(`Kernel の起動に失敗しました: ${err.message}`);
+      const errorMsg = `Kernel の起動に失敗しました。JupyterLab の API が準備できていない可能性があります。\n詳細: ${err.message}\n\n「Kernel 起動」ボタンをクリックして再試行してください。`;
+      setError(errorMsg);
+      setOutput((prev: string) => prev + `エラー: ${errorMsg}\n`);
       console.error('Kernel start error:', err);
+    } finally {
+      setIsInitializing(false);
     }
   };
 
@@ -136,19 +192,23 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
             <span className="status-label">Kernel ステータス:</span>
             <span
               className={`status-indicator ${
-                isKernelReady ? 'ready' : 'not-ready'
+                isKernelReady ? 'ready' : isInitializing ? 'initializing' : 'not-ready'
               }`}
             >
-              {isKernelReady ? '準備完了' : '未起動'}
+              {isKernelReady ? '準備完了' : isInitializing ? '初期化中...' : '未起動'}
             </span>
           </div>
           {isKernelReady ? (
-            <button onClick={stopKernel} className="btn btn-secondary">
+            <button onClick={stopKernel} className="btn btn-secondary" disabled={isInitializing}>
               Kernel 停止
             </button>
           ) : (
-            <button onClick={startKernel} className="btn btn-primary">
-              Kernel 起動
+            <button 
+              onClick={startKernel} 
+              className="btn btn-primary" 
+              disabled={isInitializing}
+            >
+              {isInitializing ? '起動中...' : 'Kernel 起動'}
             </button>
           )}
         </div>
