@@ -26,6 +26,19 @@ jupyter lab build --minimize=False
 echo "Step 6: Verifying extension installation..."
 jupyter labextension list
 
+echo "Step 7: Configuring JupyterLab for Simple Interface..."
+# JupyterLab設定ディレクトリを作成
+mkdir -p ~/.jupyter/lab/user-settings/@jupyterlab/application-extension
+
+# Simple Interfaceを有効にする設定ファイルを作成
+cat > ~/.jupyter/lab/user-settings/@jupyterlab/application-extension/settings.jupyterlab-settings << 'EOF'
+{
+  "simpleMode": true
+}
+EOF
+
+echo "JupyterLab settings configured successfully!"
+
 echo "=========================================="
 echo "Extension installation completed!"
 echo "=========================================="
