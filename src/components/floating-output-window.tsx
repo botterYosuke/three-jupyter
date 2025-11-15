@@ -5,13 +5,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import type { Kernel, KernelMessage } from '@jupyterlab/services';
-import type { FloatingWindow } from '../services/floating-window-manager';
-
-interface OutputItem {
-  type: 'stream' | 'execute_result' | 'display_data' | 'error';
-  content: string;
-  timestamp: number;
-}
+import type { FloatingWindow, OutputItem } from '../services/floating-window-manager';
 
 interface FloatingOutputWindowProps {
   window: FloatingWindow;
@@ -32,12 +26,22 @@ export const FloatingOutputWindow: React.FC<FloatingOutputWindowProps> = ({
   onUpdatePosition,
   onUpdateSize
 }) => {
-  const [outputs, setOutputs] = useState<OutputItem[]>([]);
+  // 初期出力データを設定
+  const [outputs, setOutputs] = useState<OutputItem[]>(
+    windowData.initialOutputs || []
+  );
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const outputContainerRef = useRef<HTMLDivElement>(null);
+  
+  // 初期出力データが変更された場合に更新
+  useEffect(() => {
+    if (windowData.initialOutputs && windowData.initialOutputs.length > 0) {
+      setOutputs(windowData.initialOutputs);
+    }
+  }, [windowData.initialOutputs]);
 
   // Kernelからの出力を監視
   useEffect(() => {

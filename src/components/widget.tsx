@@ -9,7 +9,8 @@ import { FloatingWindowManager } from '../services/floating-window-manager';
 import { FloatingEditorWindow } from './floating-editor-window';
 import { FloatingOutputWindow } from './floating-output-window';
 import { FloatingMarkdownWindow } from './floating-markdown-window';
-import { parseNotebook, categorizeCells } from '../utils/notebook-parser';
+import { parseNotebook, categorizeCells, convertNotebookOutputs } from '../utils/notebook-parser';
+import type { OutputItem } from '../services/floating-window-manager';
 
 interface ThreeJupyterProps {
   context?: DocumentRegistry.IContext<INotebookModel>;
@@ -98,9 +99,12 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
           
           // 出力がある場合は出力ウィンドウも作成
           if (cell.outputs && cell.outputs.length > 0 && windowId) {
+            // 出力データを変換
+            const outputItems = convertNotebookOutputs(cell.outputs);
+            
             // 出力ウィンドウは後で作成（エディタウィンドウの位置が確定してから）
             setTimeout(() => {
-              createOutputWindow(windowId);
+              createOutputWindow(windowId, outputItems);
             }, 200);
           }
         });
@@ -298,7 +302,7 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
   /**
    * エディタウィンドウに紐付いた出力ウィンドウを作成
    */
-  const createOutputWindow = (editorWindowId: string) => {
+  const createOutputWindow = (editorWindowId: string, initialOutputs?: OutputItem[]) => {
     if (!windowManagerRef.current) return;
 
     const editorWindow = windowManagerRef.current.getWindow(editorWindowId);
@@ -318,7 +322,8 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
       'output',
       title,
       '',
-      editorWindowId
+      editorWindowId,
+      initialOutputs
     );
 
     // 位置を調整

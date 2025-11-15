@@ -5,6 +5,12 @@
 
 export type WindowType = 'editor' | 'output' | 'markdown';
 
+export interface OutputItem {
+  type: 'stream' | 'execute_result' | 'display_data' | 'error';
+  content: string;
+  timestamp: number;
+}
+
 export interface FloatingWindow {
   id: string;
   type: WindowType;
@@ -17,6 +23,7 @@ export interface FloatingWindow {
   isMinimized: boolean;
   content: string;
   linkedWindowId?: string; // エディタウィンドウと出力ウィンドウの紐付け
+  initialOutputs?: OutputItem[]; // 初期出力データ（ipynbファイルから読み込んだ出力）
 }
 
 type WindowChangeListener = (windows: FloatingWindow[]) => void;
@@ -50,7 +57,8 @@ export class FloatingWindowManager {
     type: WindowType,
     title: string = 'Untitled',
     content: string = '',
-    linkedWindowId?: string
+    linkedWindowId?: string,
+    initialOutputs?: OutputItem[]
   ): string {
     const id = `window-${this.nextId++}`;
     
@@ -70,7 +78,8 @@ export class FloatingWindowManager {
       zIndex: ++this.maxZIndex,
       isMinimized: false,
       content,
-      linkedWindowId
+      linkedWindowId,
+      initialOutputs: initialOutputs || undefined
     };
 
     this.windows.set(id, newWindow);
