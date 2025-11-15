@@ -5,7 +5,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import type { Kernel, KernelMessage } from '@jupyterlab/services';
-import type { FloatingWindow } from '../floating-window-manager';
+import type { FloatingWindow } from '../services/floating-window-manager';
 
 interface OutputItem {
   type: 'stream' | 'execute_result' | 'display_data' | 'error';

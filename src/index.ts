@@ -4,7 +4,7 @@ import {
 } from '@jupyterlab/application';
 import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
 import { Widget } from '@lumino/widgets';
-import { ThreeJupyterWidget } from './widget';
+import { ThreeJupyterWidget } from './components/widget';
 
 /**
  * Initialization data for the three-jupyterlab extension.

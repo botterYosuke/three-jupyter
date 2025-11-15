@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { KernelManager, Kernel } from '@jupyterlab/services';
 import { ReactWidget } from '@jupyterlab/apputils';
-import { SceneManager } from './scene-manager';
-import { FloatingWindowManager } from './floating-window-manager';
-import { FloatingEditorWindow } from './components/floating-editor-window';
-import { FloatingOutputWindow } from './components/floating-output-window';
-import { FloatingMarkdownWindow } from './components/floating-markdown-window';
+import { SceneManager } from '../services/scene-manager';
+import { FloatingWindowManager } from '../services/floating-window-manager';
+import { FloatingEditorWindow } from './floating-editor-window';
+import { FloatingOutputWindow } from './floating-output-window';
+import { FloatingMarkdownWindow } from './floating-markdown-window';
 
 interface ThreeJupyterProps {}
 
@@ -341,3 +341,4 @@ export class ThreeJupyterWidget extends ReactWidget {
     return <ThreeJupyterComponent />;
   }
 }
+

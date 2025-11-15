@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { FloatingWindowCSS2DService } from './services/floating-window-css2d.service';
+import { FloatingWindowCSS2DService } from './floating-window-css2d.service';
 
 export class SceneManager {
   private scene: THREE.Scene;
@@ -18,6 +18,7 @@ export class SceneManager {
   private container: HTMLElement;
   private animationFrameId: number | null = null;
   private floatingWindowCSS2DService: FloatingWindowCSS2DService;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -80,6 +81,12 @@ export class SceneManager {
 
     // ウィンドウリサイズイベント
     window.addEventListener('resize', this.onWindowResize);
+
+    // ResizeObserverでコンテナのサイズ変更を監視（サイドバーの表示/非表示に対応）
+    this.resizeObserver = new ResizeObserver(() => {
+      this.onWindowResize();
+    });
+    this.resizeObserver.observe(container);
 
     // アニメーションループ開始
     this.animate();
@@ -176,6 +183,12 @@ export class SceneManager {
     }
 
     window.removeEventListener('resize', this.onWindowResize);
+
+    // ResizeObserverをクリーンアップ
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
 
     // フローティングウィンドウCSS2Dサービスをクリーンアップ
     if (this.floatingWindowCSS2DService) {

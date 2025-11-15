@@ -5,7 +5,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
-import type { FloatingWindow } from '../floating-window-manager';
+import type { FloatingWindow } from '../services/floating-window-manager';
 
 interface FloatingMarkdownWindowProps {
   window: FloatingWindow;
