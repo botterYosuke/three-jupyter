@@ -153,25 +153,34 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
       }
     };
 
-    // シーンが初期化されるまで待つ（最大10秒）
+    // シーンとコンテナが初期化されるまで待つ（最大10秒）
     let attempts = 0;
-    const maxAttempts = 50; // 5秒（100ms * 50）
+    const maxAttempts = 100; // 10秒（100ms * 100）
     
     const checkAndLoad = () => {
       attempts++;
-      if (windowManagerRef.current) {
-        console.log('WindowManager ready, starting notebook load');
+      if (windowManagerRef.current && floatingContainer && outputContainer) {
+        console.log('WindowManager and containers ready, starting notebook load');
         loadNotebook();
       } else if (attempts < maxAttempts) {
+        if (attempts % 10 === 0) {
+          console.log(`Waiting for initialization... (attempt ${attempts}/${maxAttempts})`);
+          console.log(`  WindowManager: ${!!windowManagerRef.current}`);
+          console.log(`  FloatingContainer: ${!!floatingContainer}`);
+          console.log(`  OutputContainer: ${!!outputContainer}`);
+        }
         setTimeout(checkAndLoad, 100);
       } else {
-        console.error('WindowManager not initialized after maximum attempts');
+        console.error('Containers not initialized after maximum attempts');
+        console.error(`  WindowManager: ${!!windowManagerRef.current}`);
+        console.error(`  FloatingContainer: ${!!floatingContainer}`);
+        console.error(`  OutputContainer: ${!!outputContainer}`);
       }
     };
 
     // 少し遅延させてからチェック開始（シーンの初期化を待つ）
     setTimeout(checkAndLoad, 500);
-  }, [context]);
+  }, [context, floatingContainer, outputContainer]);
 
   /**
    * Three.jsシーンを初期化
