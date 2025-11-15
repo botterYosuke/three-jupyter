@@ -270,30 +270,7 @@
     path-browserify "^1.0.0"
     url-parse "~1.5.4"
 
-"@jupyterlab/docmanager@^4.0.0":
-  version "4.4.10"
-  resolved "https://registry.npmjs.org/@jupyterlab/docmanager/-/docmanager-4.4.10.tgz"
-  integrity sha512-URz2RVUxR8+kAvxJI0x+nBWYLfqi1Z7eQGnoLBws8+xcDyAbtTZUfKRDk4xNEOGec0qU8MKivDN7urAMaBnw/g==
-  dependencies:
-    "@jupyterlab/apputils" "^4.5.10"
-    "@jupyterlab/coreutils" "^6.4.10"
-    "@jupyterlab/docregistry" "^4.4.10"
-    "@jupyterlab/services" "^7.4.10"
-    "@jupyterlab/statedb" "^4.4.10"
-    "@jupyterlab/statusbar" "^4.4.10"
-    "@jupyterlab/translation" "^4.4.10"
-    "@jupyterlab/ui-components" "^4.4.10"
-    "@lumino/algorithm" "^2.0.3"
-    "@lumino/coreutils" "^2.2.1"
-    "@lumino/disposable" "^2.1.4"
-    "@lumino/messaging" "^2.0.3"
-    "@lumino/polling" "^2.1.4"
-    "@lumino/properties" "^2.0.3"
-    "@lumino/signaling" "^2.1.4"
-    "@lumino/widgets" "^2.7.1"
-    react "^18.2.0"
-
-"@jupyterlab/docregistry@^4.0.0", "@jupyterlab/docregistry@^4.4.10":
+"@jupyterlab/docregistry@^4.4.10":
   version "4.4.10"
   resolved "https://registry.npmjs.org/@jupyterlab/docregistry/-/docregistry-4.4.10.tgz"
   integrity sha512-pT4Eeme+DLFdsJYzajzQZFz5yiLd4ZK8rGqA9Vmw1bn0IOXowfuCA6Qes8N3O2ZmduUvd8HK21OGw+q8/3+STQ==

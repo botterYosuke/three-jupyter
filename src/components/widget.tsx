@@ -4,16 +4,13 @@ import { KernelManager, Kernel } from '@jupyterlab/services';
 import { ReactWidget } from '@jupyterlab/apputils';
 import { SceneManager } from '../services/scene-manager';
 import { FloatingWindowManager } from '../services/floating-window-manager';
-import { NotebookManager } from '../services/notebook-manager';
 import { FloatingEditorWindow } from './floating-editor-window';
 import { FloatingOutputWindow } from './floating-output-window';
 import { FloatingMarkdownWindow } from './floating-markdown-window';
 
-interface ThreeJupyterProps {
-  notebookManager?: NotebookManager;
-}
+interface ThreeJupyterProps {}
 
-const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ notebookManager }) => {
+const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
   const [isKernelReady, setIsKernelReady] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -350,16 +347,13 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ notebookManager })
  * A Lumino widget that wraps a React component.
  */
 export class ThreeJupyterWidget extends ReactWidget {
-  private notebookManager: NotebookManager | undefined;
-
-  constructor(notebookManager?: NotebookManager) {
+  constructor() {
     super();
-    this.notebookManager = notebookManager;
     this.addClass('three-jupyter-widget');
   }
 
   render(): React.ReactElement {
-    return <ThreeJupyterComponent notebookManager={this.notebookManager} />;
+    return <ThreeJupyterComponent />;
   }
 }
 

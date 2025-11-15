@@ -26,28 +26,6 @@ jupyter lab build --minimize=False
 echo "Step 6: Verifying extension installation..."
 jupyter labextension list
 
-echo "Step 7: Configuring JupyterLab for Simple Interface..."
-# JupyterLab設定ディレクトリを作成
-mkdir -p ~/.jupyter/lab/user-settings/@jupyterlab/application-extension
-
-# Simple Interfaceを有効にする設定ファイルを作成
-cat > ~/.jupyter/lab/user-settings/@jupyterlab/application-extension/settings.jupyterlab-settings << 'EOF'
-{
-  "simpleMode": true
-}
-EOF
-
-# 注意: jupyter_lab_config.pyで拡張機能を無効化すると起動に失敗する可能性があるため、
-# 現在はSimple Interfaceのみを有効化しています
-# 拡張機能の無効化が必要な場合は、起動後に手動で行うか、
-# 拡張機能のコード内で制御する必要があります
-
-echo "JupyterLab UI configuration completed successfully!"
-echo "- Simple Interface: enabled"
-echo ""
-echo "Note: Disabling extensions via jupyter_lab_config.py may cause startup failures."
-echo "      Simple Interface mode will minimize UI elements visibility."
-
 echo "=========================================="
 echo "Extension installation completed!"
 echo "=========================================="

@@ -2,13 +2,10 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
-import { ICommandPalette } from '@jupyterlab/apputils';
-import { IDocumentManager } from '@jupyterlab/docmanager';
-import { DocumentWidget } from '@jupyterlab/docregistry';
+import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
 import { ILauncher } from '@jupyterlab/launcher';
 import { Widget } from '@lumino/widgets';
 import { ThreeJupyterWidget } from './components/widget';
-import { NotebookManager } from './services/notebook-manager';
 
 /**
  * Initialization data for the three-jupyterlab extension.
@@ -18,13 +15,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
   description: 'JupyterLab extension with custom UI for Python code execution',
   autoStart: true,
   optional: [ICommandPalette, ILauncher],
-  requires: [IDocumentManager],
-  activate: (app: JupyterFrontEnd, documentManager: IDocumentManager, palette: ICommandPalette | null, launcher: ILauncher | null) => {
+  activate: (app: JupyterFrontEnd, palette: ICommandPalette | null, launcher: ILauncher | null) => {
     console.log('JupyterLab extension three-jupyterlab is activated!');
-    let notebookManager: NotebookManager | null = null;
 
     // ウィジェットを作成する関数
-    const createWidget = async () => {
+    const createWidget = () => {
       try {
         // 既存のウィジェットをチェック
         const widgets = Array.from(app.shell.widgets('main'));
@@ -38,24 +33,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
           return;
         }
 
-        // Untitled.ipynbを作成または取得
-        const context = await documentManager.newUntitled({
-          type: 'notebook'
-        }) as any; // DocumentRegistry.IContext<INotebookModel> 相当
-
-        // NotebookManagerを作成（contextを直接渡す）
-        notebookManager = new NotebookManager({
-          context
-        });
-        
-        await notebookManager.initialize();
-
         // ウィジェットを作成
-        const content = new ThreeJupyterWidget(notebookManager);
-        const widget = new DocumentWidget({
-          content,
-          context: context as any
-        });
+        const content = new ThreeJupyterWidget();
+        const widget = new MainAreaWidget<ThreeJupyterWidget>({ content });
         widget.id = 'three-jupyterlab';
         widget.title.label = 'Three Jupyter';
         widget.title.closable = true;
@@ -95,6 +75,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     // JupyterLabの復元が完了してからウィジェットを開く（非ブロッキング）
     // app.restored を待たずに、シェルが利用可能になったら開く
+    /*
     const openWidgetWhenReady = async () => {
       try {
         // タイムアウト付きで app.restored を待つ（最大3秒）
@@ -119,6 +100,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     // 非同期で実行（activate をブロックしない）
     openWidgetWhenReady();
+    */
   }
 };
 
