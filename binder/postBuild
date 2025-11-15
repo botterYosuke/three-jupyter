@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Binder postBuild script for three-jupyterlab extension
+
+set -e
+
+echo "=========================================="
+echo "Building three-jupyterlab extension"
+echo "=========================================="
+
+echo "Step 1: Installing npm dependencies..."
+npm install
+
+echo "Step 2: Building the extension..."
+npm run build:prod
+
+echo "Step 3: Installing the extension..."
+pip install -e .
+
+echo "Step 4: Building JupyterLab (this may take a few minutes)..."
+jupyter lab build --minimize=False
+
+echo "=========================================="
+echo "Extension installation completed!"
+echo "=========================================="
+echo ""
+echo "The extension is now available in JupyterLab."
+echo "Open the command palette (Ctrl+Shift+C) and search for 'Three Jupyter' to use it."
+

@@ -2,6 +2,22 @@
 
 JupyterLab拡張として実装された、カスタムUIでPythonコードを実行するアプリケーションです。
 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/YOUR_USERNAME/three-JupyterLab/HEAD?urlpath=lab)
+
+## Binderで試す
+
+この拡張機能をインストールしたJupyterLabをBinderで試すことができます：
+
+1. 上記のBinderバッジをクリックするか、以下のURLにアクセス：
+   ```
+   https://mybinder.org/v2/gh/YOUR_USERNAME/three-JupyterLab/HEAD?urlpath=lab
+   ```
+   （`YOUR_USERNAME`を実際のGitHubユーザー名に置き換えてください）
+
+2. Binderが環境を構築するまで数分待ちます（初回は時間がかかります）
+
+3. JupyterLabが起動したら、コマンドパレット（`Ctrl+Shift+C`）を開き、"Three Jupyter を開く" を検索して実行します
+
 ## 機能
 
 - JupyterLab拡張として統合
@@ -70,6 +86,9 @@ jupyter lab
 
 ```
 three-JupyterLab/
+├── binder/
+│   ├── environment.yml   # Binder用の環境設定
+│   └── postBuild         # Binder用のビルドスクリプト
 ├── src/
 │   ├── index.ts          # 拡張のエントリーポイント
 │   └── widget.tsx        # Reactコンポーネント

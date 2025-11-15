@@ -1,0 +1,13 @@
+name: three-jupyterlab
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.8
+  - jupyterlab>=4.0.0
+  - nodejs>=18
+  - npm
+  - ipykernel
+  - pip
+  - pip:
+    - jupyter-packaging
+
