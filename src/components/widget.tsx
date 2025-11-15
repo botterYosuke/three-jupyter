@@ -2,15 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { KernelManager, Kernel } from '@jupyterlab/services';
 import { ReactWidget } from '@jupyterlab/apputils';
+import { DocumentRegistry } from '@jupyterlab/docregistry';
+import { INotebookModel } from '@jupyterlab/notebook';
 import { SceneManager } from '../services/scene-manager';
 import { FloatingWindowManager } from '../services/floating-window-manager';
 import { FloatingEditorWindow } from './floating-editor-window';
 import { FloatingOutputWindow } from './floating-output-window';
 import { FloatingMarkdownWindow } from './floating-markdown-window';
+import { parseNotebook, categorizeCells } from '../utils/notebook-parser';
 
-interface ThreeJupyterProps {}
+interface ThreeJupyterProps {
+  context?: DocumentRegistry.IContext<INotebookModel>;
+}
 
-const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
+const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
   const [isKernelReady, setIsKernelReady] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -24,6 +29,7 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
   const windowManagerRef = useRef<FloatingWindowManager | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const initializationAttemptedRef = useRef<boolean>(false);
+  const notebookLoadedRef = useRef<boolean>(false);
 
   useEffect(() => {
     // 少し遅延させてから初期化
@@ -40,6 +46,83 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
       cleanUp();
     };
   }, []);
+
+  // ipynbファイルの内容を読み込む
+  useEffect(() => {
+    if (!context || !windowManagerRef.current || notebookLoadedRef.current) {
+      return;
+    }
+
+    const loadNotebook = async () => {
+      try {
+        console.log('Loading notebook from context:', context.path);
+        // モデルが準備されるまで待つ
+        await context.ready;
+        
+        const model = context.model;
+        if (!model) {
+          console.warn('Model not available for context:', context.path);
+          return;
+        }
+
+        // NotebookのJSONデータを取得
+        const notebookData = model.toJSON();
+        console.log('Notebook data loaded:', notebookData);
+        
+        // セルを解析
+        const cells = parseNotebook(notebookData);
+        console.log('Parsed cells:', cells.length);
+        if (cells.length === 0) {
+          console.log('No cells found in notebook');
+          return;
+        }
+
+        // 既存のウィンドウをクリア
+        windowManagerRef.current?.clearAllWindows();
+
+        // セルを分類
+        const { codeCells, markdownCells } = categorizeCells(cells);
+
+        // コードセルをエディタウィンドウとして作成
+        codeCells.forEach((cell, index) => {
+          const source = typeof cell.source === 'string' ? cell.source : cell.source.join('');
+          const title = `Code Cell ${index + 1}`;
+          const windowId = windowManagerRef.current?.createWindow('editor', title, source);
+          
+          // 出力がある場合は出力ウィンドウも作成
+          if (cell.outputs && cell.outputs.length > 0 && windowId) {
+            // 出力ウィンドウは後で作成（エディタウィンドウの位置が確定してから）
+            setTimeout(() => {
+              createOutputWindow(windowId);
+            }, 100);
+          }
+        });
+
+        // マークダウンセルをマークダウンウィンドウとして作成
+        markdownCells.forEach((cell, index) => {
+          const source = typeof cell.source === 'string' ? cell.source : cell.source.join('');
+          const title = `Markdown ${index + 1}`;
+          windowManagerRef.current?.createWindow('markdown', title, source);
+        });
+
+        notebookLoadedRef.current = true;
+        console.log(`Loaded ${cells.length} cells from notebook`);
+      } catch (error) {
+        console.error('Error loading notebook:', error);
+      }
+    };
+
+    // シーンが初期化されるまで待つ
+    const checkAndLoad = () => {
+      if (windowManagerRef.current) {
+        loadNotebook();
+      } else {
+        setTimeout(checkAndLoad, 100);
+      }
+    };
+
+    checkAndLoad();
+  }, [context]);
 
   /**
    * Three.jsシーンを初期化
@@ -347,13 +430,16 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
  * A Lumino widget that wraps a React component.
  */
 export class ThreeJupyterWidget extends ReactWidget {
-  constructor() {
+  private _context?: DocumentRegistry.IContext<INotebookModel>;
+
+  constructor(context?: DocumentRegistry.IContext<INotebookModel>) {
     super();
     this.addClass('three-jupyter-widget');
+    this._context = context;
   }
 
   render(): React.ReactElement {
-    return <ThreeJupyterComponent />;
+    return <ThreeJupyterComponent context={this._context} />;
   }
 }
 
