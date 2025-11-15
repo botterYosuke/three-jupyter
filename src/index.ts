@@ -2,7 +2,7 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
-import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
+import { ICommandPalette } from '@jupyterlab/apputils';
 import { DocumentRegistry, DocumentWidget, IDocumentWidget, ABCWidgetFactory } from '@jupyterlab/docregistry';
 import { ILauncher } from '@jupyterlab/launcher';
 import { INotebookModel } from '@jupyterlab/notebook';
@@ -19,33 +19,33 @@ const plugin: JupyterFrontEndPlugin<void> = {
   optional: [ICommandPalette, ILauncher],
   activate: (app: JupyterFrontEnd, palette: ICommandPalette | null, launcher: ILauncher | null) => {
 
-    // ウィジェットを作成する関数
-    const createWidget = () => {
+    // 新しいnotebookファイルを作成して開く関数
+    const createNewNotebook = async () => {
       try {
-        // 既存のウィジェットをチェック
-        const widgets = Array.from(app.shell.widgets('main'));
-        const existingWidget = widgets.find(
-          (widget: Widget) => widget.id === 'three-jupyterlab'
-        );
+        // 新しいnotebookファイルを作成
+        const model = await app.serviceManager.contents.newUntitled({
+          type: 'notebook'
+        });
 
-        if (existingWidget) {
-          // 既存のウィジェットが開いている場合は、それをアクティブにする
-          app.shell.activateById('three-jupyterlab');
-          return;
+        if (!model || !model.path) {
+          throw new Error('Failed to create notebook file: model or path is missing');
         }
 
-        // ウィジェットを作成
-        const content = new ThreeJupyterWidget();
-        const widget = new MainAreaWidget<ThreeJupyterWidget>({ content });
-        widget.id = 'three-jupyterlab';
-        widget.title.label = 'Three Jupyter';
-        widget.title.closable = true;
-
-        // ウィジェットを追加
-        app.shell.add(widget, 'main');
-        app.shell.activateById('three-jupyterlab');
+        // 作成されたファイルを開く
+        await app.commands.execute('docmanager:open', {
+          path: model.path
+        });
       } catch (error) {
-        console.error('Error creating widget:', error);
+        console.error('Error creating new notebook:', error);
+        
+        // エラーの詳細をログに記録
+        if (error instanceof Error) {
+          console.error('Error message:', error.message);
+          console.error('Error stack:', error.stack);
+        }
+        
+        // エラーが発生した場合は、ユーザーに通知する
+        // 必要に応じて、エラーダイアログを表示することも可能
       }
     };
 
@@ -55,7 +55,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
       label: 'Three Jupyter を開く',
       caption: 'カスタムUIでPythonコードを実行',
       execute: () => {
-        createWidget();
+        createNewNotebook();
       }
     });
 
