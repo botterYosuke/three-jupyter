@@ -126,6 +126,25 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
           console.log(`Created markdown cell window ${index + 1}: ${windowId}`);
         });
 
+        // ウィンドウマネージャーから現在のウィンドウリストを取得して状態を更新
+        // notifyListeners()が自動的に呼ばれるはずだが、念のため手動で更新
+        if (windowManagerRef.current) {
+          const currentWindows = windowManagerRef.current.getAllWindows();
+          console.log(`Updating windows state with ${currentWindows.length} windows`);
+          console.log('Floating container available:', !!floatingContainer);
+          console.log('Output container available:', !!outputContainer);
+          setWindows(currentWindows);
+          
+          // 状態更新を確実にするため、少し遅延させて再度更新
+          setTimeout(() => {
+            const updatedWindows = windowManagerRef.current?.getAllWindows();
+            if (updatedWindows) {
+              console.log('Second update with', updatedWindows.length, 'windows');
+              setWindows(updatedWindows);
+            }
+          }, 100);
+        }
+
         notebookLoadedRef.current = true;
         console.log(`Successfully loaded ${cells.length} cells from notebook`);
       } catch (error) {
@@ -180,6 +199,7 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
       
       // ウィンドウ変更リスナーを登録
       windowManagerRef.current.addListener((updatedWindows) => {
+        console.log('WindowManager listener called with', updatedWindows.length, 'windows');
         setWindows(updatedWindows);
       });
 
