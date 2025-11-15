@@ -109,7 +109,7 @@
   border-radius: 4px;
   font-weight: 500;
   cursor: pointer;
-  background: rgba(107, 114, 128, 0.6);
+  background: transparent;
   color: white;
   transition: background 0.2s;
 }

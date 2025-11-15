@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { KernelManager, Kernel } from '@jupyterlab/services';
 import { ReactWidget } from '@jupyterlab/apputils';
@@ -14,9 +14,10 @@ import type { OutputItem } from '../services/floating-window-manager';
 
 interface ThreeJupyterProps {
   context?: DocumentRegistry.IContext<INotebookModel>;
+  onSaveNotebookRef?: (ref: () => Promise<void>) => void;
 }
 
-const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
+const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context, onSaveNotebookRef }) => {
   const [isKernelReady, setIsKernelReady] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -267,7 +268,152 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
     }
   };
 
-  const cleanUp = () => {
+  /**
+   * ウィンドウの内容をNotebook形式に変換して保存
+   */
+  const saveNotebook = useCallback(async () => {
+    if (!context || !windowManagerRef.current) {
+      return;
+    }
+
+    // contextが既にdisposeされている場合は保存しない
+    if (context.isDisposed) {
+      console.warn('Context is already disposed, skipping save');
+      return;
+    }
+
+    try {
+      await context.ready;
+      const model = context.model;
+      if (!model) {
+        console.warn('Model not available for saving');
+        return;
+      }
+      
+      // modelが既にdisposeされている場合は保存しない
+      if (model.isDisposed) {
+        console.warn('Model is already disposed, skipping save');
+        return;
+      }
+
+      // すべてのウィンドウを取得
+      const allWindows = windowManagerRef.current.getAllWindows();
+      
+      // エディタウィンドウとマークダウンウィンドウを取得（出力ウィンドウは除外）
+      const editorWindows = allWindows.filter(w => w.type === 'editor');
+      const markdownWindows = allWindows.filter(w => w.type === 'markdown');
+      
+      // Notebook形式のセル配列を作成
+      const cells: any[] = [];
+      
+      // エディタウィンドウをコードセルとして追加
+      editorWindows.forEach((window) => {
+        const source = window.content || '';
+        const cell: any = {
+          cell_type: 'code',
+          source: source.split('\n'),
+          metadata: {},
+          execution_count: null,
+          outputs: []
+        };
+        
+        // リンクされた出力ウィンドウがある場合は、出力を追加
+        const outputWindow = allWindows.find(
+          w => w.type === 'output' && w.linkedWindowId === window.id
+        );
+        
+        if (outputWindow && outputWindow.initialOutputs) {
+          // OutputItemをNotebook形式の出力に変換
+          const notebookOutputs: any[] = [];
+          outputWindow.initialOutputs.forEach((outputItem) => {
+            if (outputItem.type === 'stream') {
+              notebookOutputs.push({
+                output_type: 'stream',
+                name: 'stdout',
+                text: outputItem.content.split('\n')
+              });
+            } else if (outputItem.type === 'execute_result' || outputItem.type === 'display_data') {
+              notebookOutputs.push({
+                output_type: outputItem.type,
+                data: {
+                  'text/plain': [outputItem.content]
+                },
+                metadata: {}
+              });
+            } else if (outputItem.type === 'error') {
+              const lines = outputItem.content.split('\n');
+              const ename = lines[0]?.split(':')[0] || 'Error';
+              const evalue = lines[0]?.split(':').slice(1).join(':').trim() || '';
+              notebookOutputs.push({
+                output_type: 'error',
+                ename: ename,
+                evalue: evalue,
+                traceback: lines.slice(1)
+              });
+            }
+          });
+          cell.outputs = notebookOutputs;
+        }
+        
+        cells.push(cell);
+      });
+      
+      // マークダウンウィンドウをマークダウンセルとして追加
+      markdownWindows.forEach((window) => {
+        const source = window.content || '';
+        cells.push({
+          cell_type: 'markdown',
+          source: source.split('\n'),
+          metadata: {}
+        });
+      });
+      
+      // 既存のNotebookデータを取得
+      const currentNotebook = model.toJSON() as any;
+      
+      // Notebook形式のデータを作成
+      const notebookData = {
+        cells: cells,
+        metadata: currentNotebook.metadata || {
+          kernelspec: {
+            display_name: 'Python 3',
+            language: 'python',
+            name: 'python3'
+          },
+          language_info: {
+            name: 'python',
+            version: '3.0.0'
+          }
+        },
+        nbformat: currentNotebook.nbformat || 4,
+        nbformat_minor: currentNotebook.nbformat_minor || 4
+      };
+      
+      // モデルを更新
+      model.fromJSON(notebookData);
+      
+      // 保存
+      await context.save();
+      console.log('Notebook saved successfully');
+    } catch (error) {
+      console.error('Error saving notebook:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+      }
+    }
+  }, [context]);
+
+  // saveNotebook関数の参照を親コンポーネントに渡す
+  useEffect(() => {
+    if (onSaveNotebookRef) {
+      onSaveNotebookRef(saveNotebook);
+    }
+  }, [onSaveNotebookRef, saveNotebook]);
+
+  const cleanUp = async () => {
+    // cleanUpでは保存しない（disposeメソッドで保存される）
+    // ここで保存すると、contextが既にdisposeされている可能性がある
+    
     stopKernel();
     if (sceneManagerRef.current) {
       sceneManagerRef.current.dispose();
@@ -465,6 +611,7 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
  */
 export class ThreeJupyterWidget extends ReactWidget {
   private _context?: DocumentRegistry.IContext<INotebookModel>;
+  private _saveNotebookRef?: () => Promise<void>;
 
   constructor(context?: DocumentRegistry.IContext<INotebookModel>) {
     super();
@@ -472,8 +619,45 @@ export class ThreeJupyterWidget extends ReactWidget {
     this._context = context;
   }
 
+  /**
+   * 保存関数の参照を設定
+   */
+  public setSaveNotebookRef(ref: () => Promise<void>): void {
+    this._saveNotebookRef = ref;
+  }
+
+  /**
+   * 手動で保存を実行（Ctrl+Sなどから呼び出される）
+   */
+  public async save(): Promise<void> {
+    if (this._saveNotebookRef) {
+      try {
+        await this._saveNotebookRef();
+      } catch (error) {
+        console.error('Error saving notebook:', error);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * ウィジェットが破棄される時に保存を実行
+   */
+  async dispose(): Promise<void> {
+    // contextがまだ有効な場合のみ保存を試みる
+    if (this._saveNotebookRef && this._context && !this._context.isDisposed) {
+      try {
+        await this._saveNotebookRef();
+      } catch (error) {
+        // エラーが発生してもログに記録するだけで、disposeは続行
+        console.error('Error saving notebook on dispose:', error);
+      }
+    }
+    super.dispose();
+  }
+
   render(): React.ReactElement {
-    return <ThreeJupyterComponent context={this._context} />;
+    return <ThreeJupyterComponent context={this._context} onSaveNotebookRef={(ref) => this.setSaveNotebookRef(ref)} />;
   }
 }
 

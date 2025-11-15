@@ -7,6 +7,7 @@ import { DocumentRegistry, DocumentWidget, IDocumentWidget, ABCWidgetFactory } f
 import { ILauncher } from '@jupyterlab/launcher';
 import { INotebookModel } from '@jupyterlab/notebook';
 import { Widget } from '@lumino/widgets';
+import { circleIcon } from '@jupyterlab/ui-components';
 import { ThreeJupyterWidget } from './components/widget';
 
 /**
@@ -59,6 +60,46 @@ const plugin: JupyterFrontEndPlugin<void> = {
       }
     });
 
+    // 保存コマンドを登録
+    const saveCommand = 'three-jupyterlab:save';
+    app.commands.addCommand(saveCommand, {
+      label: '保存',
+      caption: 'Notebookファイルを上書き保存',
+      execute: async () => {
+        try {
+          // 現在アクティブなウィジェットを取得
+          const currentWidget = app.shell.currentWidget;
+          if (currentWidget && currentWidget.id && currentWidget.id.startsWith('three-jupyterlab-')) {
+            // ThreeJupyterWidgetのsaveメソッドを呼び出す
+            const threeWidget = currentWidget as any;
+            if (threeWidget.content && typeof threeWidget.content.save === 'function') {
+              await threeWidget.content.save();
+            } else if (threeWidget.save && typeof threeWidget.save === 'function') {
+              await threeWidget.save();
+            } else {
+              // フォールバック: docmanager:saveコマンドを使用
+              await app.commands.execute('docmanager:save');
+            }
+          } else {
+            // フォールバック: docmanager:saveコマンドを使用
+            await app.commands.execute('docmanager:save');
+          }
+        } catch (error) {
+          console.error('Error saving notebook:', error);
+          if (error instanceof Error) {
+            console.error('Error message:', error.message);
+          }
+        }
+      }
+    });
+
+    // Ctrl+Sキーバインドを追加
+    app.commands.addKeyBinding({
+      command: saveCommand,
+      keys: ['Accel S'],
+      selector: '.three-jupyter-widget'
+    });
+
     // コマンドパレットに追加
     if (palette) {
       palette.addItem({ command, category: 'Three Jupyter' });
@@ -86,6 +127,30 @@ const plugin: JupyterFrontEndPlugin<void> = {
         widget.id = `three-jupyterlab-${context.path}`;
         widget.title.label = context.path.split('/').pop() || 'Three Jupyter';
         widget.title.closable = true;
+        
+        // 未保存状態の時に×ボタンを●に変更
+        const updateDirtyState = () => {
+          if (context.model.dirty) {
+            // 未保存状態の時は●アイコンを表示
+            widget.title.icon = circleIcon;
+            widget.title.iconClass = 'jp-mod-dirty';
+          } else {
+            // 保存済みの時はアイコンをクリア
+            widget.title.icon = undefined;
+            widget.title.iconClass = '';
+          }
+        };
+        
+        // 初期状態を設定
+        updateDirtyState();
+        
+        // dirty状態の変更を監視（context.modelのdirtyプロパティの変更を監視）
+        context.model.stateChanged.connect((model, change) => {
+          if (change.name === 'dirty') {
+            updateDirtyState();
+          }
+        });
+        
         return widget;
       }
     }
@@ -99,34 +164,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     app.docRegistry.addWidgetFactory(factory);
 
-    // JupyterLabの復元が完了してからウィジェットを開く（非ブロッキング）
-    // app.restored を待たずに、シェルが利用可能になったら開く
-    /*
-    const openWidgetWhenReady = async () => {
-      try {
-        // タイムアウト付きで app.restored を待つ（最大3秒）
-        const timeoutPromise = new Promise<void>((resolve) => {
-          setTimeout(() => {
-            console.log('Opening widget without waiting for full restore...');
-            resolve();
-          }, 3000);
-        });
-
-        await Promise.race([app.restored, timeoutPromise]);
-      } catch (error) {
-        console.error('Error in app.restored:', error);
-      }
-
-      // 少し遅延させてからウィジェットを開く（シェルが完全に準備されるのを待つ）
-      setTimeout(() => {
-        console.log('Opening Three Jupyter widget...');
-        createWidget();
-      }, 500);
-    };
-
-    // 非同期で実行（activate をブロックしない）
-    openWidgetWhenReady();
-    */
   }
 };
 
