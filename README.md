@@ -35,7 +35,6 @@ JupyterLab拡張として実装された、カスタムUIでPythonコードを�
 ### 1. 依存関係のインストール
 
 ```powershell
-cd C:\Users\sasai\Documents\three-JupyterLab
 npm install
 ```
 
@@ -46,6 +45,12 @@ jlpm install
 ```
 
 ### 2. 拡張のビルド
+
+```powershell
+npm run build
+```
+
+または
 
 ```powershell
 jlpm build

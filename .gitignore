@@ -3,6 +3,7 @@ lib/
 *.tsbuildinfo
 dist/
 build/
+.yarn/
 
 # Node
 node_modules/
