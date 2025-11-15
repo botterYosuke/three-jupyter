@@ -242,31 +242,31 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
 
   return (
     <div className="three-jupyter-container">
-      <header className="toolbar">
-        <h1>Three Jupyter</h1>
-        <div className="toolbar-status">
-          <span className={`status-indicator ${isKernelReady ? 'ready' : 'not-ready'}`}>
-            Kernel: {isKernelReady ? '準備完了' : isInitializing ? '初期化中...' : '未起動'}
-          </span>
-          {isKernelReady ? (
-            <button onClick={stopKernel} className="btn btn-secondary">
-              Kernel 停止
-            </button>
-          ) : (
-            <button onClick={startKernel} className="btn btn-primary" disabled={isInitializing}>
-              {isInitializing ? '起動中...' : 'Kernel 起動'}
-            </button>
-          )}
-        </div>
-        <div className="toolbar-buttons">
-          <button onClick={createEditorWindow} className="btn btn-primary" title="新しいコードセル">
-            + Code
+      {/* ツールバー - 右上に配置 */}
+      <div className="toolbar">
+        <button onClick={createEditorWindow} className="toolbar-btn" title="新しいコードセル">
+          +
+        </button>
+        <button onClick={createMarkdownWindow} className="toolbar-btn info-btn" title="新しいマークダウンセル">
+          i
+        </button>
+      </div>
+
+      {/* Kernel status - 左下に配置 */}
+      <div className="kernel-status">
+        <span className={`status-indicator ${isKernelReady ? 'ready' : 'not-ready'}`}>
+          Kernel: {isKernelReady ? '準備完了' : isInitializing ? '初期化中...' : '未起動'}
+        </span>
+        {isKernelReady ? (
+          <button onClick={stopKernel} className="kernel-btn">
+            Stop
           </button>
-          <button onClick={createMarkdownWindow} className="btn btn-secondary" title="新しいマークダウンセル">
-            + Markdown
+        ) : (
+          <button onClick={startKernel} className="kernel-btn" disabled={isInitializing}>
+            {isInitializing ? '起動中...' : 'Start'}
           </button>
-        </div>
-      </header>
+        )}
+      </div>
 
       {error && (
         <div className="error-banner">

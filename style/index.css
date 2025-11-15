@@ -14,34 +14,50 @@
   background: #1e1e2e;
 }
 
-/* Toolbar */
+/* Toolbar - 右上に配置 */
 .three-jupyter-container .toolbar {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 12px 20px;
-  background: #2d2d3a;
-  border-bottom: 1px solid #3e3e42;
-  flex-shrink: 0;
-}
-
-.three-jupyter-container .toolbar h1 {
-  font-size: 1.5em;
-  margin: 0;
-  color: #ffffff;
-  font-weight: 600;
-}
-
-.three-jupyter-container .toolbar-status {
-  display: flex;
-  align-items: center;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  margin-left: auto;
+  align-items: center;
+  background: transparent;
+  padding: 8px 16px;
+  z-index: 999;
 }
 
-.three-jupyter-container .toolbar-buttons {
-  display: flex;
-  gap: 8px;
+.three-jupyter-container .toolbar-btn {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: #60730D;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: 900;
+  transition: background 0.2s;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.three-jupyter-container .toolbar-btn:hover {
+  background: #839B0D;
+}
+
+.three-jupyter-container .toolbar-btn:active {
+  background: #0d5a8c;
+}
+
+.three-jupyter-container .toolbar-btn.info-btn {
+  width: 48px;
+  height: 48px;
+  font-weight: bold;
+  font-style: italic;
 }
 
 .three-jupyter-container .main-content {
@@ -91,6 +107,67 @@
 .three-jupyter-container .status-indicator.not-ready {
   background-color: #ef4444;
   color: white;
+}
+
+/* Kernel status - 左下に配置、控えめなスタイル */
+.three-jupyter-container .kernel-status {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(45, 45, 48, 0.7);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-radius: 6px;
+  font-size: 0.75em;
+  z-index: 998;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.three-jupyter-container .kernel-status:hover {
+  opacity: 1;
+}
+
+.three-jupyter-container .kernel-status .status-indicator {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75em;
+  font-weight: 500;
+}
+
+.three-jupyter-container .kernel-status .status-indicator.ready {
+  background-color: rgba(16, 185, 129, 0.8);
+  color: white;
+}
+
+.three-jupyter-container .kernel-status .status-indicator.not-ready {
+  background-color: rgba(239, 68, 68, 0.8);
+  color: white;
+}
+
+.three-jupyter-container .kernel-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: 500;
+  cursor: pointer;
+  background: rgba(107, 114, 128, 0.6);
+  color: white;
+  transition: background 0.2s;
+}
+
+.three-jupyter-container .kernel-btn:hover:not(:disabled) {
+  background: rgba(107, 114, 128, 0.9);
+}
+
+.three-jupyter-container .kernel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @keyframes pulse {
@@ -269,6 +346,7 @@
   background: #2d2d30;
   border-bottom: 1px solid #3e3e42;
   cursor: move;
+  -webkit-user-select: none;
   user-select: none;
 }
 
