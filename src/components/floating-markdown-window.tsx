@@ -26,7 +26,7 @@ export const FloatingMarkdownWindow: React.FC<FloatingMarkdownWindowProps> = ({
   onUpdateSize,
   onUpdateContent
 }) => {
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(true);
   const [markdown, setMarkdown] = useState(windowData.content || '# Markdown\n\nEdit me...');
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -41,6 +41,16 @@ export const FloatingMarkdownWindow: React.FC<FloatingMarkdownWindowProps> = ({
       gfm: true
     });
   }, []);
+
+  // 編集モードに切り替えた際にtextareaに自動フォーカス
+  useEffect(() => {
+    if (isEditMode && textareaRef.current) {
+      textareaRef.current.focus();
+      // カーソルを末尾に配置
+      const length = textareaRef.current.value.length;
+      textareaRef.current.setSelectionRange(length, length);
+    }
+  }, [isEditMode]);
 
   // マークダウンをHTMLに変換
   const renderMarkdown = (): string => {
@@ -64,6 +74,29 @@ export const FloatingMarkdownWindow: React.FC<FloatingMarkdownWindowProps> = ({
   // マークダウンの変更
   const handleMarkdownChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMarkdown(e.target.value);
+  };
+
+  // キーボードイベントハンドラー（編集モード）
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (e.shiftKey || e.ctrlKey)) {
+      e.preventDefault();
+      // Previewモードに切り替え、コンテンツを保存
+      onUpdateContent(markdown);
+      setIsEditMode(false);
+    }
+  };
+
+  // Previewモードから編集モードに切り替え
+  const handlePreviewToEdit = () => {
+    setIsEditMode(true);
+  };
+
+  // キーボードイベントハンドラー（Previewモード）
+  const handlePreviewKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handlePreviewToEdit();
+    }
   };
 
   // タイトルバーのドラッグ開始
@@ -168,11 +201,15 @@ export const FloatingMarkdownWindow: React.FC<FloatingMarkdownWindowProps> = ({
             className="markdown-editor"
             value={markdown}
             onChange={handleMarkdownChange}
+            onKeyDown={handleTextareaKeyDown}
             placeholder="Enter markdown here..."
           />
         ) : (
           <div
             className="markdown-preview"
+            tabIndex={0}
+            onDoubleClick={handlePreviewToEdit}
+            onKeyDown={handlePreviewKeyDown}
             dangerouslySetInnerHTML={{ __html: renderMarkdown() }}
           />
         )}
