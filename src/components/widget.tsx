@@ -49,15 +49,23 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
 
   // ipynbファイルの内容を読み込む
   useEffect(() => {
-    if (!context || !windowManagerRef.current || notebookLoadedRef.current) {
+    if (!context) {
+      console.log('No context provided, skipping notebook load');
+      return;
+    }
+
+    if (notebookLoadedRef.current) {
+      console.log('Notebook already loaded, skipping');
       return;
     }
 
     const loadNotebook = async () => {
       try {
         console.log('Loading notebook from context:', context.path);
+        
         // モデルが準備されるまで待つ
         await context.ready;
+        console.log('Context ready');
         
         const model = context.model;
         if (!model) {
@@ -65,9 +73,18 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
           return;
         }
 
+        // windowManagerが初期化されるまで待つ
+        if (!windowManagerRef.current) {
+          console.log('WindowManager not ready yet, waiting...');
+          setTimeout(loadNotebook, 200);
+          return;
+        }
+
+        console.log('WindowManager ready, loading notebook data');
+        
         // NotebookのJSONデータを取得
-        const notebookData = model.toJSON();
-        console.log('Notebook data loaded:', notebookData);
+        const notebookData = model.toJSON() as any;
+        console.log('Notebook data loaded, cells count:', notebookData?.cells?.length || 0);
         
         // セルを解析
         const cells = parseNotebook(notebookData);
@@ -78,23 +95,26 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
         }
 
         // 既存のウィンドウをクリア
-        windowManagerRef.current?.clearAllWindows();
+        windowManagerRef.current.clearAllWindows();
+        console.log('Cleared existing windows');
 
         // セルを分類
         const { codeCells, markdownCells } = categorizeCells(cells);
+        console.log(`Found ${codeCells.length} code cells and ${markdownCells.length} markdown cells`);
 
         // コードセルをエディタウィンドウとして作成
         codeCells.forEach((cell, index) => {
           const source = typeof cell.source === 'string' ? cell.source : cell.source.join('');
           const title = `Code Cell ${index + 1}`;
           const windowId = windowManagerRef.current?.createWindow('editor', title, source);
+          console.log(`Created code cell window ${index + 1}: ${windowId}`);
           
           // 出力がある場合は出力ウィンドウも作成
           if (cell.outputs && cell.outputs.length > 0 && windowId) {
             // 出力ウィンドウは後で作成（エディタウィンドウの位置が確定してから）
             setTimeout(() => {
               createOutputWindow(windowId);
-            }, 100);
+            }, 200);
           }
         });
 
@@ -102,26 +122,36 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
         markdownCells.forEach((cell, index) => {
           const source = typeof cell.source === 'string' ? cell.source : cell.source.join('');
           const title = `Markdown ${index + 1}`;
-          windowManagerRef.current?.createWindow('markdown', title, source);
+          const windowId = windowManagerRef.current?.createWindow('markdown', title, source);
+          console.log(`Created markdown cell window ${index + 1}: ${windowId}`);
         });
 
         notebookLoadedRef.current = true;
-        console.log(`Loaded ${cells.length} cells from notebook`);
+        console.log(`Successfully loaded ${cells.length} cells from notebook`);
       } catch (error) {
         console.error('Error loading notebook:', error);
+        console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       }
     };
 
-    // シーンが初期化されるまで待つ
+    // シーンが初期化されるまで待つ（最大10秒）
+    let attempts = 0;
+    const maxAttempts = 50; // 5秒（100ms * 50）
+    
     const checkAndLoad = () => {
+      attempts++;
       if (windowManagerRef.current) {
+        console.log('WindowManager ready, starting notebook load');
         loadNotebook();
-      } else {
+      } else if (attempts < maxAttempts) {
         setTimeout(checkAndLoad, 100);
+      } else {
+        console.error('WindowManager not initialized after maximum attempts');
       }
     };
 
-    checkAndLoad();
+    // 少し遅延させてからチェック開始（シーンの初期化を待つ）
+    setTimeout(checkAndLoad, 500);
   }, [context]);
 
   /**
