@@ -1,0 +1,5 @@
+jupyter-server>=2.0.0
+jupyter-kernel-gateway>=2.5.0
+jupyter-client>=8.0.0
+notebook>=7.0.0
+
