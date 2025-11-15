@@ -1,40 +1,69 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { KernelManager, Kernel, KernelMessage } from '@jupyterlab/services';
+import { KernelManager, Kernel } from '@jupyterlab/services';
 import { ReactWidget } from '@jupyterlab/apputils';
+import { SceneManager } from './scene-manager';
+import { FloatingWindowManager } from './floating-window-manager';
+import { FloatingEditorWindow } from './components/floating-editor-window';
+import { FloatingOutputWindow } from './components/floating-output-window';
+import { FloatingMarkdownWindow } from './components/floating-markdown-window';
 
 interface ThreeJupyterProps {}
 
 const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
-  const [code, setCode] = useState<string>('print("Hello, Jupyter!")');
-  const [output, setOutput] = useState<string>('');
-  const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [isKernelReady, setIsKernelReady] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [windows, setWindows] = useState<any[]>([]);
+  
   const kernelRef = useRef<Kernel.IKernelConnection | null>(null);
   const kernelManagerRef = useRef<KernelManager | null>(null);
+  const sceneManagerRef = useRef<SceneManager | null>(null);
+  const windowManagerRef = useRef<FloatingWindowManager | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const initializationAttemptedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    // 起動直後のAPIエラーを避けるため、少し遅延させてから初期化
+    // 少し遅延させてから初期化
     const initTimer = setTimeout(() => {
       if (!initializationAttemptedRef.current) {
         initializationAttemptedRef.current = true;
+        initializeScene();
         startKernel();
       }
-    }, 1000); // 1秒待ってから初期化
+    }, 1000);
 
-    // クリーンアップ
     return () => {
       clearTimeout(initTimer);
-      stopKernel();
+      cleanUp();
     };
   }, []);
 
   /**
-   * カーネルを起動する（リトライ付き）
-   * startNew()の呼び出し時に/api/kernelsが呼ばれる可能性があるため、
-   * エラーが発生した場合はリトライする
+   * Three.jsシーンを初期化
+   */
+  const initializeScene = () => {
+    if (!containerRef.current || sceneManagerRef.current) return;
+
+    try {
+      sceneManagerRef.current = new SceneManager(containerRef.current);
+      
+      // ウィンドウマネージャーを初期化
+      windowManagerRef.current = new FloatingWindowManager();
+      
+      // ウィンドウ変更リスナーを登録
+      windowManagerRef.current.addListener((updatedWindows) => {
+        setWindows(updatedWindows);
+      });
+
+      console.log('Three.js scene initialized');
+    } catch (err) {
+      console.error('Scene initialization error:', err);
+      setError('Failed to initialize 3D scene');
+    }
+  };
+
+  /**
+   * カーネルを起動
    */
   const startKernelWithRetry = async (
     manager: KernelManager,
@@ -45,11 +74,7 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
     
     for (let i = 0; i < retries; i++) {
       try {
-        // カーネルを起動（デフォルトはpython3）
-        // この呼び出しで/api/kernelsが呼ばれる可能性がある
-        const kernel = await manager.startNew({
-          name: 'python3'
-        });
+        const kernel = await manager.startNew({ name: 'python3' });
         return kernel;
       } catch (err: any) {
         lastError = err;
@@ -58,12 +83,10 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
           break;
         }
         console.warn(`カーネル起動試行 ${i + 1}/${retries} 失敗:`, err.message);
-        // 指数バックオフでリトライ
         await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
       }
     }
     
-    // すべてのリトライが失敗した場合
     throw new Error(
       `カーネルの起動に失敗しました (${retries}回試行): ${lastError?.message || '不明なエラー'}`
     );
@@ -71,38 +94,30 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
 
   const startKernel = async () => {
     if (isInitializing) {
-      return; // 既に初期化中
+      return;
     }
 
     setIsInitializing(true);
     setError('');
-    setOutput((prev: string) => prev + 'Kernel を起動中...\n');
 
     try {
-      // KernelManagerを初期化（同期的なのでエラーは発生しない）
       if (!kernelManagerRef.current) {
         kernelManagerRef.current = new KernelManager();
       }
 
-      // カーネルを起動（リトライ付き）
       const kernel = await startKernelWithRetry(kernelManagerRef.current);
-
       kernelRef.current = kernel;
       setIsKernelReady(true);
-      setOutput((prev: string) => prev + 'Kernel が起動しました。\n');
       setError('');
 
-      // カーネルの状態変更を監視
       kernel.statusChanged.connect((_: Kernel.IKernelConnection, status: Kernel.Status) => {
         if (status === 'dead' || status === 'terminating') {
           setIsKernelReady(false);
-          setOutput((prev: string) => prev + '\nKernel が停止しました。');
         }
       });
     } catch (err: any) {
-      const errorMsg = `Kernel の起動に失敗しました。JupyterLab の API が準備できていない可能性があります。\n詳細: ${err.message}\n\n「Kernel 起動」ボタンをクリックして再試行してください。`;
+      const errorMsg = `Kernel の起動に失敗しました。\n詳細: ${err.message}`;
       setError(errorMsg);
-      setOutput((prev: string) => prev + `エラー: ${errorMsg}\n`);
       console.error('Kernel start error:', err);
     } finally {
       setIsInitializing(false);
@@ -115,138 +130,188 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
         await kernelRef.current.shutdown();
         kernelRef.current = null;
         setIsKernelReady(false);
-        setOutput((prev: string) => prev + '\nKernel が停止しました。');
       } catch (err) {
         console.error('Kernel stop error:', err);
       }
     }
   };
 
-  const executeCode = async () => {
-    if (!isKernelReady || !kernelRef.current) {
-      setError('Kernel が起動していません。');
-      return;
-    }
-
-    if (!code.trim()) {
-      setError('コードを入力してください。');
-      return;
-    }
-
-    setIsExecuting(true);
-    setError('');
-    setOutput((prev: string) => prev + `\n>>> ${code}\n`);
-
-    try {
-      const kernel = kernelRef.current;
-      const future = kernel.requestExecute({ code });
-
-      // 実行結果を処理
-      future.onIOPub = (msg: KernelMessage.IIOPubMessage) => {
-        const msgType = msg.header.msg_type;
-        const content = msg.content as any;
-
-        if (msgType === 'execute_result') {
-          const data = content.data;
-          const text = data['text/plain'] || data['text/html'] || String(data);
-          setOutput((prev: string) => prev + text + '\n');
-        } else if (msgType === 'stream') {
-          const text = content.text || '';
-          setOutput((prev: string) => prev + text);
-        } else if (msgType === 'error') {
-          const errorMsg = `${content.ename}: ${content.evalue}`;
-          setOutput((prev: string) => prev + `エラー: ${errorMsg}\n`);
-          if (content.traceback) {
-            const traceback = content.traceback.join('\n');
-            setOutput((prev: string) => prev + traceback + '\n');
-          }
-        }
-      };
-
-      // 実行完了を待機
-      await future.done;
-      setIsExecuting(false);
-    } catch (err: any) {
-      setIsExecuting(false);
-      setError(`実行エラー: ${err.message}`);
-      setOutput((prev: string) => prev + `エラー: ${err.message}\n`);
-      console.error('Execute error:', err);
+  const cleanUp = () => {
+    stopKernel();
+    if (sceneManagerRef.current) {
+      sceneManagerRef.current.dispose();
+      sceneManagerRef.current = null;
     }
   };
 
-  const clearOutput = () => {
-    setOutput('');
-    setError('');
+  /**
+   * 新しいエディタウィンドウを作成
+   */
+  const createEditorWindow = () => {
+    if (!windowManagerRef.current) return;
+
+    const count = windows.filter(w => w.type === 'editor').length;
+    const title = count === 0 ? 'Code Cell' : `Code Cell ${count + 1}`;
+    
+    windowManagerRef.current.createWindow('editor', title, 'print("Hello, Jupyter!")');
+  };
+
+  /**
+   * 新しいマークダウンウィンドウを作成
+   */
+  const createMarkdownWindow = () => {
+    if (!windowManagerRef.current) return;
+
+    const count = windows.filter(w => w.type === 'markdown').length;
+    const title = count === 0 ? 'Markdown' : `Markdown ${count + 1}`;
+    
+    windowManagerRef.current.createWindow('markdown', title, '# Markdown\n\nEdit me...');
+  };
+
+  /**
+   * エディタウィンドウに紐付いた出力ウィンドウを作成
+   */
+  const createOutputWindow = (editorWindowId: string) => {
+    if (!windowManagerRef.current) return;
+
+    const editorWindow = windowManagerRef.current.getWindow(editorWindowId);
+    if (!editorWindow) return;
+
+    // 既に出力ウィンドウが存在する場合は作成しない
+    const existingOutput = windows.find(
+      w => w.type === 'output' && w.linkedWindowId === editorWindowId
+    );
+    if (existingOutput) return;
+
+    const title = `Output: ${editorWindow.title}`;
+    const outputX = editorWindow.x + editorWindow.width + 20;
+    const outputY = editorWindow.y;
+    
+    const outputId = windowManagerRef.current.createWindow(
+      'output',
+      title,
+      '',
+      editorWindowId
+    );
+
+    // 位置を調整
+    windowManagerRef.current.updatePosition(outputId, outputX, outputY);
+  };
+
+  /**
+   * ウィンドウハンドラー
+   */
+  const handleCloseWindow = (id: string) => {
+    windowManagerRef.current?.closeWindow(id);
+  };
+
+  const handleMinimizeWindow = (id: string) => {
+    windowManagerRef.current?.minimizeWindow(id);
+  };
+
+  const handleBringToFront = (id: string) => {
+    windowManagerRef.current?.bringToFront(id);
+  };
+
+  const handleUpdatePosition = (id: string, x: number, y: number) => {
+    windowManagerRef.current?.updatePosition(id, x, y);
+  };
+
+  const handleUpdateSize = (id: string, width: number, height: number) => {
+    windowManagerRef.current?.updateSize(id, width, height);
+  };
+
+  const handleUpdateContent = (id: string, content: string) => {
+    windowManagerRef.current?.updateContent(id, content);
   };
 
   return (
     <div className="three-jupyter-container">
-      <header>
+      <header className="toolbar">
         <h1>Three Jupyter</h1>
-        <p className="subtitle">JupyterLab Extension with Custom UI</p>
-      </header>
-
-      <div className="main-content">
-        <div className="status-bar">
-          <div className="status-item">
-            <span className="status-label">Kernel ステータス:</span>
-            <span
-              className={`status-indicator ${
-                isKernelReady ? 'ready' : isInitializing ? 'initializing' : 'not-ready'
-              }`}
-            >
-              {isKernelReady ? '準備完了' : isInitializing ? '初期化中...' : '未起動'}
-            </span>
-          </div>
+        <div className="toolbar-status">
+          <span className={`status-indicator ${isKernelReady ? 'ready' : 'not-ready'}`}>
+            Kernel: {isKernelReady ? '準備完了' : isInitializing ? '初期化中...' : '未起動'}
+          </span>
           {isKernelReady ? (
-            <button onClick={stopKernel} className="btn btn-secondary" disabled={isInitializing}>
+            <button onClick={stopKernel} className="btn btn-secondary">
               Kernel 停止
             </button>
           ) : (
-            <button 
-              onClick={startKernel} 
-              className="btn btn-primary" 
-              disabled={isInitializing}
-            >
+            <button onClick={startKernel} className="btn btn-primary" disabled={isInitializing}>
               {isInitializing ? '起動中...' : 'Kernel 起動'}
             </button>
           )}
         </div>
-
-        <div className="code-section">
-          <div className="section-header">
-            <h2>コード入力</h2>
-          </div>
-          <textarea
-            value={code}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCode(e.target.value)}
-            className="code-input"
-            placeholder="Python コードを入力してください..."
-            rows={10}
-          />
-          <div className="button-group">
-            <button
-              onClick={executeCode}
-              disabled={!isKernelReady || isExecuting}
-              className="btn btn-primary btn-execute"
-            >
-              {isExecuting ? '実行中...' : '実行'}
-            </button>
-            <button onClick={clearOutput} className="btn btn-secondary">
-              出力をクリア
-            </button>
-          </div>
+        <div className="toolbar-buttons">
+          <button onClick={createEditorWindow} className="btn btn-primary" title="新しいコードセル">
+            + Code
+          </button>
+          <button onClick={createMarkdownWindow} className="btn btn-secondary" title="新しいマークダウンセル">
+            + Markdown
+          </button>
         </div>
+      </header>
 
-        <div className="output-section">
-          <div className="section-header">
-            <h2>出力</h2>
-          </div>
-          <div className="output-container">
-            <pre className="output-text">{output || '(出力なし)'}</pre>
-          </div>
-          {error && <div className="error-message">{error}</div>}
+      {error && (
+        <div className="error-banner">
+          {error}
         </div>
+      )}
+
+      <div ref={containerRef} className="scene-container">
+        {/* Three.jsシーンがここにレンダリングされる */}
+      </div>
+
+      {/* フローティングウィンドウをレンダリング */}
+      <div className="floating-windows-container">
+        {windows.map(window => {
+          switch (window.type) {
+            case 'editor':
+              return (
+                <FloatingEditorWindow
+                  key={window.id}
+                  window={window}
+                  kernel={kernelRef.current}
+                  onClose={() => handleCloseWindow(window.id)}
+                  onMinimize={() => handleMinimizeWindow(window.id)}
+                  onBringToFront={() => handleBringToFront(window.id)}
+                  onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
+                  onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
+                  onUpdateContent={(content) => handleUpdateContent(window.id, content)}
+                  onCreateOutputWindow={createOutputWindow}
+                />
+              );
+            case 'output':
+              return (
+                <FloatingOutputWindow
+                  key={window.id}
+                  window={window}
+                  kernel={kernelRef.current}
+                  onClose={() => handleCloseWindow(window.id)}
+                  onMinimize={() => handleMinimizeWindow(window.id)}
+                  onBringToFront={() => handleBringToFront(window.id)}
+                  onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
+                  onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
+                />
+              );
+            case 'markdown':
+              return (
+                <FloatingMarkdownWindow
+                  key={window.id}
+                  window={window}
+                  onClose={() => handleCloseWindow(window.id)}
+                  onMinimize={() => handleMinimizeWindow(window.id)}
+                  onBringToFront={() => handleBringToFront(window.id)}
+                  onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
+                  onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
+                  onUpdateContent={(content) => handleUpdateContent(window.id, content)}
+                />
+              );
+            default:
+              return null;
+          }
+        })}
       </div>
     </div>
   );
@@ -256,9 +321,6 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
  * A Lumino widget that wraps a React component.
  */
 export class ThreeJupyterWidget extends ReactWidget {
-  /**
-   * Constructs a new ThreeJupyterWidget.
-   */
   constructor() {
     super();
     this.addClass('three-jupyter-widget');
@@ -268,4 +330,3 @@ export class ThreeJupyterWidget extends ReactWidget {
     return <ThreeJupyterComponent />;
   }
 }
-
