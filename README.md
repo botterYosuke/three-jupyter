@@ -2,7 +2,7 @@
 
 JupyterLab拡張として実装された、カスタムUIでPythonコードを実行するアプリケーションです。
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/YOUR_USERNAME/three-JupyterLab/HEAD?urlpath=lab)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/botterYosuke/three-jupyter/HEAD)
 
 ## Binderで試す
 
@@ -10,9 +10,8 @@ JupyterLab拡張として実装された、カスタムUIでPythonコードを�
 
 1. 上記のBinderバッジをクリックするか、以下のURLにアクセス：
    ```
-   https://mybinder.org/v2/gh/YOUR_USERNAME/three-JupyterLab/HEAD?urlpath=lab
+   https://mybinder.org/v2/gh/botterYosuke/three-jupyter/HEAD
    ```
-   （`YOUR_USERNAME`を実際のGitHubユーザー名に置き換えてください）
 
 2. Binderが環境を構築するまで数分待ちます（初回は時間がかかります）
 
