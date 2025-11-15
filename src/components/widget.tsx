@@ -16,6 +16,7 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
   const [error, setError] = useState<string>('');
   const [windows, setWindows] = useState<any[]>([]);
   const [floatingContainer, setFloatingContainer] = useState<HTMLDivElement | null>(null);
+  const [outputContainer, setOutputContainer] = useState<HTMLDivElement | null>(null);
   
   const kernelRef = useRef<Kernel.IKernelConnection | null>(null);
   const kernelManagerRef = useRef<KernelManager | null>(null);
@@ -53,6 +54,12 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
       const container = sceneManagerRef.current.getFloatingContainer();
       if (container) {
         setFloatingContainer(container);
+      }
+      
+      // 出力ウィンドウコンテナを取得
+      const outputContainer = sceneManagerRef.current.getOutputContainer();
+      if (outputContainer) {
+        setOutputContainer(outputContainer);
       }
       
       // ウィンドウマネージャーを初期化
@@ -291,19 +298,6 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
                     onCreateOutputWindow={createOutputWindow}
                   />
                 );
-              case 'output':
-                return (
-                  <FloatingOutputWindow
-                    key={window.id}
-                    window={window}
-                    kernel={kernelRef.current}
-                    onClose={() => handleCloseWindow(window.id)}
-                    onMinimize={() => handleMinimizeWindow(window.id)}
-                    onBringToFront={() => handleBringToFront(window.id)}
-                    onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
-                    onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
-                  />
-                );
               case 'markdown':
                 return (
                   <FloatingMarkdownWindow
@@ -323,6 +317,30 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
           })}
         </>,
         floatingContainer
+      )}
+
+      {/* 出力ウィンドウを出力コンテナにPortalでレンダリング */}
+      {outputContainer && createPortal(
+        <>
+          {windows.map(window => {
+            if (window.type === 'output') {
+              return (
+                <FloatingOutputWindow
+                  key={window.id}
+                  window={window}
+                  kernel={kernelRef.current}
+                  onClose={() => handleCloseWindow(window.id)}
+                  onMinimize={() => handleMinimizeWindow(window.id)}
+                  onBringToFront={() => handleBringToFront(window.id)}
+                  onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
+                  onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
+                />
+              );
+            }
+            return null;
+          })}
+        </>,
+        outputContainer
       )}
     </div>
   );

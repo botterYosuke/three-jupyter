@@ -62,6 +62,7 @@ export class SceneManager {
     this.floatingWindowCSS2DService = new FloatingWindowCSS2DService();
     this.floatingWindowCSS2DService.initializeWithRenderer(this.css2DRenderer);
     this.floatingWindowCSS2DService.attachToScene(this.scene);
+    this.floatingWindowCSS2DService.attachOutputContainerToScene(this.scene);
 
     // OrbitControlsの初期化
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -98,6 +99,14 @@ export class SceneManager {
    */
   public getFloatingContainer(): HTMLDivElement | undefined {
     return this.floatingWindowCSS2DService?.getFloatingContainer();
+  }
+
+  /**
+   * 出力ウィンドウコンテナを取得
+   * Reactコンポーネントがこのコンテナに出力ウィンドウを追加できるようにする
+   */
+  public getOutputContainer(): HTMLDivElement | undefined {
+    return this.floatingWindowCSS2DService?.getOutputContainer();
   }
 
   /**

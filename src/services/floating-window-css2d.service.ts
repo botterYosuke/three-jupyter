@@ -18,9 +18,12 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 export class FloatingWindowCSS2DService {
   private css2DRenderer?: CSS2DRenderer;
   private css2DObject?: CSS2DObject;
+  private outputCSS2DObject?: CSS2DObject;
   private hostElement?: HTMLElement;
   private floatingContainer?: HTMLDivElement;
+  private outputContainer?: HTMLDivElement;
   private isContainerVisible = true;
+  private isOutputContainerVisible = true;
   
   // スケール計算用の設定
   private baseDistance: number | null = null; // 基準距離（起動時の距離で初期化）
@@ -53,6 +56,8 @@ export class FloatingWindowCSS2DService {
 
     // フローティングウィンドウコンテナを作成
     this.createFloatingContainer();
+    // 出力ウィンドウコンテナを作成
+    this.createOutputContainer();
     this.applyContainerVisibility();
 
     return this.css2DRenderer;
@@ -66,6 +71,7 @@ export class FloatingWindowCSS2DService {
   initializeWithRenderer(css2DRenderer: CSS2DRenderer): void {
     this.css2DRenderer = css2DRenderer;
     this.createFloatingContainer();
+    this.createOutputContainer();
     this.applyContainerVisibility();
   }
 
@@ -119,6 +125,55 @@ export class FloatingWindowCSS2DService {
   }
 
   /**
+   * 出力ウィンドウコンテナDOM要素を作成します
+   * 
+   * このメソッドは内部的に呼ばれ、
+   * .floating-output-container要素を動的に生成します。
+   */
+  private createOutputContainer(): HTMLDivElement {
+    if (this.outputContainer) {
+      this.applyContainerVisibility();
+      return this.outputContainer;
+    }
+
+    const container = document.createElement('div');
+    container.className = 'floating-output-container';
+    
+    // CSSスタイルをインラインで設定
+    container.style.position = 'absolute';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '0';
+    container.style.height = '0';
+    container.style.pointerEvents = 'none';
+    container.style.zIndex = '100';
+
+    // 子要素のpointer-eventsを有効化するためのスタイルを追加
+    const style = document.createElement('style');
+    style.textContent = `
+      .floating-output-container > * {
+        pointer-events: all;
+      }
+    `;
+    document.head.appendChild(style);
+
+    this.outputContainer = container;
+    this.applyContainerVisibility();
+    
+    return container;
+  }
+
+  /**
+   * 出力ウィンドウコンテナを取得します
+   * 
+   * Reactコンポーネントが出力ウィンドウコンポーネントを
+   * このコンテナに追加できるようにします。
+   */
+  getOutputContainer(): HTMLDivElement | undefined {
+    return this.outputContainer;
+  }
+
+  /**
    * フローティングウィンドウコンテナを3D空間に配置します
    * 
    * @param scene Three.jsのシーン
@@ -126,7 +181,7 @@ export class FloatingWindowCSS2DService {
    */
   attachToScene(
     scene: THREE.Scene,
-    position: THREE.Vector3 = new THREE.Vector3(0, 20, -100)
+    position: THREE.Vector3 = new THREE.Vector3(0, 200, -100)
   ): CSS2DObject | null {
     if (!this.floatingContainer) {
       console.warn('Floating container is not created. Call initializeRenderer() or initializeWithRenderer() first.');
@@ -134,6 +189,24 @@ export class FloatingWindowCSS2DService {
     }
 
     return this.attachFloatingWindowContainer(this.floatingContainer, scene, position);
+  }
+
+  /**
+   * 出力ウィンドウコンテナを3D空間に配置します
+   * 
+   * @param scene Three.jsのシーン
+   * @param position 3D空間での配置位置（デフォルト: (0, 0, -100)）
+   */
+  attachOutputContainerToScene(
+    scene: THREE.Scene,
+    position: THREE.Vector3 = new THREE.Vector3(0, 0, -100)
+  ): CSS2DObject | null {
+    if (!this.outputContainer) {
+      console.warn('Output container is not created. Call initializeRenderer() or initializeWithRenderer() first.');
+      return null;
+    }
+
+    return this.attachOutputContainer(this.outputContainer, scene, position);
   }
 
   /**
@@ -165,6 +238,37 @@ export class FloatingWindowCSS2DService {
     scene.add(this.css2DObject);
 
     return this.css2DObject;
+  }
+
+  /**
+   * 出力ウィンドウコンテナをCSS2DObjectとして3D空間に配置します
+   * 
+   * @param containerElement 出力ウィンドウコンテナのDOM要素
+   * @param scene Three.jsのシーン
+   * @param position 3D空間での配置位置（デフォルト: (0, 0, -100)）
+   */
+  private attachOutputContainer(
+    containerElement: HTMLElement,
+    scene: THREE.Scene,
+    position: THREE.Vector3 = new THREE.Vector3(0, 0, -100)
+  ): CSS2DObject {
+    // 既存のオブジェクトを削除
+    if (this.outputCSS2DObject && this.outputCSS2DObject.parent) {
+      this.outputCSS2DObject.parent.remove(this.outputCSS2DObject);
+    }
+
+    // DOM要素のpointer-eventsを有効化
+    containerElement.style.pointerEvents = 'auto';
+
+    // CSS2DObjectを作成
+    this.outputCSS2DObject = new CSS2DObject(containerElement);
+    this.outputCSS2DObject.position.copy(position);
+    this.outputCSS2DObject.scale.set(1, 1, 1);
+
+    // シーンに追加
+    scene.add(this.outputCSS2DObject);
+
+    return this.outputCSS2DObject;
   }
 
   /**
@@ -231,6 +335,43 @@ export class FloatingWindowCSS2DService {
   }
 
   /**
+   * 出力コンテナのスケールを更新します
+   * 
+   * @param camera Three.jsのカメラ
+   */
+  private updateOutputContainerScale(camera: THREE.PerspectiveCamera): void {
+    if (!this.outputContainer || !this.outputCSS2DObject) {
+      return;
+    }
+
+    // カメラとCSS2Dオブジェクトの3D空間での位置を取得
+    const cameraPosition = camera.position;
+    const objectPosition = new THREE.Vector3();
+    this.outputCSS2DObject.getWorldPosition(objectPosition);
+
+    // 距離を計算（y方向のみ）
+    const distance = Math.abs(cameraPosition.y - objectPosition.y);
+
+    // スケールを計算
+    const scale = this.calculateScale(distance);
+
+    // CSS2DRendererが設定した既存のtransformを取得
+    const existingTransform = this.outputContainer.style.transform || '';
+    
+    // 既存のtransformからscale()を削除（既に存在する場合）
+    let cleanedTransform = existingTransform.replace(/\s*scale\([^)]*\)/gi, '');
+    
+    // 既存のtransformにscale()を追加
+    const newTransform = cleanedTransform.trim() 
+      ? `${cleanedTransform.trim()} scale(${scale})`
+      : `scale(${scale})`;
+    
+    // DOM要素のtransformスタイルを更新
+    this.outputContainer.style.transform = newTransform;
+    this.outputContainer.style.transformOrigin = 'top left';
+  }
+
+  /**
    * CSS2Dシーンをレンダリングします
    * 
    * @param scene Three.jsのシーン
@@ -247,6 +388,7 @@ export class FloatingWindowCSS2DService {
     // CSS2DRendererのrender()の後にscaleを適用
     // これにより、CSS2DRendererが設定したtransformに対してscaleを追加できる
     this.updateContainerScale(camera);
+    this.updateOutputContainerScale(camera);
   }
 
   /**
@@ -285,6 +427,12 @@ export class FloatingWindowCSS2DService {
     }
     this.css2DObject = undefined;
 
+    // 出力用CSS2DObjectをシーンから削除
+    if (this.outputCSS2DObject && this.outputCSS2DObject.parent) {
+      this.outputCSS2DObject.parent.remove(this.outputCSS2DObject);
+    }
+    this.outputCSS2DObject = undefined;
+
     // フローティングコンテナを削除
     if (this.floatingContainer) {
       // コンテナ内の子要素をすべて削除
@@ -296,6 +444,19 @@ export class FloatingWindowCSS2DService {
         this.floatingContainer.parentElement.removeChild(this.floatingContainer);
       }
       this.floatingContainer = undefined;
+    }
+
+    // 出力コンテナを削除
+    if (this.outputContainer) {
+      // コンテナ内の子要素をすべて削除
+      while (this.outputContainer.firstChild) {
+        this.outputContainer.removeChild(this.outputContainer.firstChild);
+      }
+      // コンテナ自体を削除（親要素がある場合）
+      if (this.outputContainer.parentElement) {
+        this.outputContainer.parentElement.removeChild(this.outputContainer);
+      }
+      this.outputContainer = undefined;
     }
 
     // CSS2DRendererのDOMを削除（独自に作成した場合のみ）
@@ -365,9 +526,14 @@ export class FloatingWindowCSS2DService {
    */
   private applyContainerVisibility(): void {
     const displayValue = this.isContainerVisible ? '' : 'none';
+    const outputDisplayValue = this.isOutputContainerVisible ? '' : 'none';
 
     if (this.floatingContainer) {
       this.floatingContainer.style.display = displayValue;
+    }
+
+    if (this.outputContainer) {
+      this.outputContainer.style.display = outputDisplayValue;
     }
   }
 }
