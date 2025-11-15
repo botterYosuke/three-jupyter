@@ -39,26 +39,29 @@ cat > ~/.jupyter/lab/user-settings/@jupyterlab/application-extension/settings.ju
 EOF
 
 # jupyter_lab_config.pyを作成して拡張機能を無効化
+# 注意: application-extension:topを無効化すると起動に失敗する可能性があるため、
+# statusbar-extensionのみを無効化します
 cat > ~/.jupyter/jupyter_lab_config.py << 'EOF'
 # JupyterLab configuration file
 # Disable extensions to hide UI elements
 
 c = get_config()
 
-# Disable UI elements by disabling their extensions
+# Disable Status Bar extension
+# Note: Disabling application-extension:top may cause startup failures,
+# so we only disable the statusbar extension here
 c.LabApp.disabled_extensions = [
-    "@jupyterlab/statusbar-extension",           # Hide Status Bar
-    "@jupyterlab/application-extension:top",    # Hide Header
+    "@jupyterlab/statusbar-extension",  # Hide Status Bar
 ]
 EOF
 
 echo "JupyterLab UI configuration completed successfully!"
 echo "- Status Bar: disabled via @jupyterlab/statusbar-extension"
-echo "- Header: disabled via @jupyterlab/application-extension:top"
 echo "- Simple Interface: enabled"
 echo ""
-echo "Note: Sidebars are core JupyterLab features and cannot be disabled via extensions."
-echo "      They may be hidden through Simple Interface mode or UI commands."
+echo "Note: Header and sidebars cannot be safely disabled via extensions"
+echo "      as they are core JupyterLab features. Simple Interface mode"
+echo "      will minimize their visibility."
 
 echo "=========================================="
 echo "Extension installation completed!"
