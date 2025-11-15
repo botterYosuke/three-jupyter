@@ -6,14 +6,18 @@
 
 import * as THREE from 'three';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { FloatingWindowCSS2DService } from './services/floating-window-css2d.service';
 
 export class SceneManager {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private css2DRenderer: CSS2DRenderer;
+  private controls: OrbitControls;
   private container: HTMLElement;
   private animationFrameId: number | null = null;
+  private floatingWindowCSS2DService: FloatingWindowCSS2DService;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -35,6 +39,10 @@ export class SceneManager {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '0';
+    this.renderer.domElement.style.zIndex = '0'; // 最下層に配置（OrbitControlsが動作するため）
     container.appendChild(this.renderer.domElement);
 
     // CSS2Dレンダラーの作成（HTML要素を3D空間に配置）
@@ -44,7 +52,18 @@ export class SceneManager {
     this.css2DRenderer.domElement.style.top = '0';
     this.css2DRenderer.domElement.style.left = '0';
     this.css2DRenderer.domElement.style.pointerEvents = 'none';
+    this.css2DRenderer.domElement.style.zIndex = '1'; // WebGLレンダラーより上、フローティングウィンドウより下
     container.appendChild(this.css2DRenderer.domElement);
+
+    // フローティングウィンドウCSS2Dサービスを初期化
+    this.floatingWindowCSS2DService = new FloatingWindowCSS2DService();
+    this.floatingWindowCSS2DService.initializeWithRenderer(this.css2DRenderer);
+    this.floatingWindowCSS2DService.attachToScene(this.scene);
+
+    // OrbitControlsの初期化
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05;
 
     // 簡単な照明を追加
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -59,6 +78,21 @@ export class SceneManager {
 
     // アニメーションループ開始
     this.animate();
+  }
+
+  /**
+   * フローティングウィンドウコンテナを取得
+   * Reactコンポーネントがこのコンテナにウィンドウを追加できるようにする
+   */
+  public getFloatingContainer(): HTMLDivElement | undefined {
+    return this.floatingWindowCSS2DService?.getFloatingContainer();
+  }
+
+  /**
+   * フローティングウィンドウCSS2Dサービスを取得
+   */
+  public getFloatingWindowCSS2DService(): FloatingWindowCSS2DService {
+    return this.floatingWindowCSS2DService;
   }
 
   /**
@@ -111,6 +145,7 @@ export class SceneManager {
 
     this.renderer.setSize(width, height);
     this.css2DRenderer.setSize(width, height);
+    this.floatingWindowCSS2DService.setSize(width, height);
   };
 
   /**
@@ -119,13 +154,12 @@ export class SceneManager {
   private animate = (): void => {
     this.animationFrameId = requestAnimationFrame(this.animate);
 
-    // カメラをゆっくり回転（オプション）
-    // this.camera.position.x = Math.sin(Date.now() * 0.0001) * 5;
-    // this.camera.position.z = Math.cos(Date.now() * 0.0001) * 5;
-    // this.camera.lookAt(0, 0, 0);
+    // OrbitControlsを更新
+    this.controls.update();
 
     this.renderer.render(this.scene, this.camera);
-    this.css2DRenderer.render(this.scene, this.camera);
+    // CSS2DRendererのレンダリングはサービス経由で行う
+    this.floatingWindowCSS2DService.render(this.scene, this.camera);
   };
 
   /**
@@ -137,6 +171,15 @@ export class SceneManager {
     }
 
     window.removeEventListener('resize', this.onWindowResize);
+
+    // フローティングウィンドウCSS2Dサービスをクリーンアップ
+    if (this.floatingWindowCSS2DService) {
+      this.floatingWindowCSS2DService.dispose();
+    }
+
+    if (this.controls) {
+      this.controls.dispose();
+    }
 
     this.renderer.dispose();
     this.container.removeChild(this.renderer.domElement);

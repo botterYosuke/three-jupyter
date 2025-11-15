@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { KernelManager, Kernel } from '@jupyterlab/services';
 import { ReactWidget } from '@jupyterlab/apputils';
 import { SceneManager } from './scene-manager';
@@ -14,6 +15,7 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
   const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [windows, setWindows] = useState<any[]>([]);
+  const [floatingContainer, setFloatingContainer] = useState<HTMLDivElement | null>(null);
   
   const kernelRef = useRef<Kernel.IKernelConnection | null>(null);
   const kernelManagerRef = useRef<KernelManager | null>(null);
@@ -46,6 +48,12 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
 
     try {
       sceneManagerRef.current = new SceneManager(containerRef.current);
+      
+      // フローティングウィンドウコンテナを取得
+      const container = sceneManagerRef.current.getFloatingContainer();
+      if (container) {
+        setFloatingContainer(container);
+      }
       
       // ウィンドウマネージャーを初期化
       windowManagerRef.current = new FloatingWindowManager();
@@ -263,56 +271,59 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
         {/* Three.jsシーンがここにレンダリングされる */}
       </div>
 
-      {/* フローティングウィンドウをレンダリング */}
-      <div className="floating-windows-container">
-        {windows.map(window => {
-          switch (window.type) {
-            case 'editor':
-              return (
-                <FloatingEditorWindow
-                  key={window.id}
-                  window={window}
-                  kernel={kernelRef.current}
-                  onClose={() => handleCloseWindow(window.id)}
-                  onMinimize={() => handleMinimizeWindow(window.id)}
-                  onBringToFront={() => handleBringToFront(window.id)}
-                  onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
-                  onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
-                  onUpdateContent={(content) => handleUpdateContent(window.id, content)}
-                  onCreateOutputWindow={createOutputWindow}
-                />
-              );
-            case 'output':
-              return (
-                <FloatingOutputWindow
-                  key={window.id}
-                  window={window}
-                  kernel={kernelRef.current}
-                  onClose={() => handleCloseWindow(window.id)}
-                  onMinimize={() => handleMinimizeWindow(window.id)}
-                  onBringToFront={() => handleBringToFront(window.id)}
-                  onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
-                  onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
-                />
-              );
-            case 'markdown':
-              return (
-                <FloatingMarkdownWindow
-                  key={window.id}
-                  window={window}
-                  onClose={() => handleCloseWindow(window.id)}
-                  onMinimize={() => handleMinimizeWindow(window.id)}
-                  onBringToFront={() => handleBringToFront(window.id)}
-                  onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
-                  onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
-                  onUpdateContent={(content) => handleUpdateContent(window.id, content)}
-                />
-              );
-            default:
-              return null;
-          }
-        })}
-      </div>
+      {/* フローティングウィンドウをCSS2DコンテナにPortalでレンダリング */}
+      {floatingContainer && createPortal(
+        <>
+          {windows.map(window => {
+            switch (window.type) {
+              case 'editor':
+                return (
+                  <FloatingEditorWindow
+                    key={window.id}
+                    window={window}
+                    kernel={kernelRef.current}
+                    onClose={() => handleCloseWindow(window.id)}
+                    onMinimize={() => handleMinimizeWindow(window.id)}
+                    onBringToFront={() => handleBringToFront(window.id)}
+                    onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
+                    onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
+                    onUpdateContent={(content) => handleUpdateContent(window.id, content)}
+                    onCreateOutputWindow={createOutputWindow}
+                  />
+                );
+              case 'output':
+                return (
+                  <FloatingOutputWindow
+                    key={window.id}
+                    window={window}
+                    kernel={kernelRef.current}
+                    onClose={() => handleCloseWindow(window.id)}
+                    onMinimize={() => handleMinimizeWindow(window.id)}
+                    onBringToFront={() => handleBringToFront(window.id)}
+                    onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
+                    onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
+                  />
+                );
+              case 'markdown':
+                return (
+                  <FloatingMarkdownWindow
+                    key={window.id}
+                    window={window}
+                    onClose={() => handleCloseWindow(window.id)}
+                    onMinimize={() => handleMinimizeWindow(window.id)}
+                    onBringToFront={() => handleBringToFront(window.id)}
+                    onUpdatePosition={(x, y) => handleUpdatePosition(window.id, x, y)}
+                    onUpdateSize={(w, h) => handleUpdateSize(window.id, w, h)}
+                    onUpdateContent={(content) => handleUpdateContent(window.id, content)}
+                  />
+                );
+              default:
+                return null;
+            }
+          })}
+        </>,
+        floatingContainer
+      )}
     </div>
   );
 };
