@@ -254,16 +254,13 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = () => {
 
       {/* Kernel status - 左下に配置 */}
       <div className="kernel-status">
-        <span className={`status-indicator ${isKernelReady ? 'ready' : 'not-ready'}`}>
-          Kernel: {isKernelReady ? '準備完了' : isInitializing ? '初期化中...' : '未起動'}
-        </span>
         {isKernelReady ? (
           <button onClick={stopKernel} className="kernel-btn">
-            Stop
+            ⏹️
           </button>
         ) : (
           <button onClick={startKernel} className="kernel-btn" disabled={isInitializing}>
-            {isInitializing ? '起動中...' : 'Start'}
+            {isInitializing ? '⏳' : '▶️'}
           </button>
         )}
       </div>
