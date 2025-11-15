@@ -3,8 +3,11 @@ import {
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
+import { DocumentRegistry, DocumentWidget, IDocumentWidget, ABCWidgetFactory } from '@jupyterlab/docregistry';
+import { ILauncher } from '@jupyterlab/launcher';
+import { INotebookModel } from '@jupyterlab/notebook';
 import { Widget } from '@lumino/widgets';
-import { ThreeJupyterWidget } from './widget';
+import { ThreeJupyterWidget } from './components/widget';
 
 /**
  * Initialization data for the three-jupyterlab extension.
@@ -13,9 +16,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'three-jupyterlab:plugin',
   description: 'JupyterLab extension with custom UI for Python code execution',
   autoStart: true,
-  optional: [ICommandPalette],
-  activate: (app: JupyterFrontEnd, palette: ICommandPalette | null) => {
-    console.log('JupyterLab extension three-jupyterlab is activated!');
+  optional: [ICommandPalette, ILauncher],
+  activate: (app: JupyterFrontEnd, palette: ICommandPalette | null, launcher: ILauncher | null) => {
 
     // ウィジェットを作成する関数
     const createWidget = () => {
@@ -42,7 +44,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
         // ウィジェットを追加
         app.shell.add(widget, 'main');
         app.shell.activateById('three-jupyterlab');
-        console.log('Three Jupyter widget opened successfully');
       } catch (error) {
         console.error('Error creating widget:', error);
       }
@@ -63,8 +64,44 @@ const plugin: JupyterFrontEndPlugin<void> = {
       palette.addItem({ command, category: 'Three Jupyter' });
     }
 
+    // ランチャーに追加
+    if (launcher) {
+      launcher.add({
+        command: command,
+        category: 'Notebook',
+        rank: 1
+      });
+    }
+
+    // ipynbファイルタイプのハンドラーを登録
+    // Three JupyterをデフォルトのNotebookビューアーとして設定
+    class ThreeJupyterWidgetFactory extends ABCWidgetFactory<IDocumentWidget<Widget, INotebookModel>> {
+      constructor(options: DocumentRegistry.IWidgetFactoryOptions<IDocumentWidget<Widget, INotebookModel>>) {
+        super(options);
+      }
+
+      protected createNewWidget(context: DocumentRegistry.IContext<INotebookModel>): IDocumentWidget<Widget, INotebookModel> {
+        const content = new ThreeJupyterWidget(context);
+        const widget = new DocumentWidget({ content, context });
+        widget.id = `three-jupyterlab-${context.path}`;
+        widget.title.label = context.path.split('/').pop() || 'Three Jupyter';
+        widget.title.closable = true;
+        return widget;
+      }
+    }
+
+    const factory = new ThreeJupyterWidgetFactory({
+      name: 'Three Jupyter',
+      modelName: 'notebook',
+      fileTypes: ['notebook'],
+      defaultFor: ['notebook']
+    });
+
+    app.docRegistry.addWidgetFactory(factory);
+
     // JupyterLabの復元が完了してからウィジェットを開く（非ブロッキング）
     // app.restored を待たずに、シェルが利用可能になったら開く
+    /*
     const openWidgetWhenReady = async () => {
       try {
         // タイムアウト付きで app.restored を待つ（最大3秒）
@@ -89,6 +126,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     // 非同期で実行（activate をブロックしない）
     openWidgetWhenReady();
+    */
   }
 };
 

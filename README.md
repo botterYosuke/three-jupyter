@@ -1,6 +1,10 @@
-# Three JupyterLab
+# three-JupyterLab プロジェクト説明
 
-JupyterLab拡張として実装された、カスタムUIでPythonコードを実行するアプリケーションです。
+## プロジェクト概要
+
+`three-JupyterLab`は、JupyterLab拡張機能として実装されたアプリケーションです。
+
+Three.jsを使用して3Dシーンを表示し、その上にフローティングウィンドウシステムでJupyterセルを操作できます。
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/botterYosuke/three-jupyter/HEAD)
 
@@ -17,12 +21,77 @@ JupyterLab拡張として実装された、カスタムUIでPythonコードを�
 
 3. JupyterLabが起動したら、コマンドパレット（`Ctrl+Shift+C`）を開き、"Three Jupyter を開く" を検索して実行します
 
-## 機能
+## 主要機能
 
-- JupyterLab拡張として統合
-- JupyterLabのKernel APIを使用したPythonコード実行
-- モダンなUIデザイン
-- リアルタイムでの実行結果表示
+### ウィンドウタイプの対応関係
+
+1. **`floating-editor-window`** (`src/components/floating-editor-window.tsx`)
+
+   - Jupyterのコードセル（ソースコード編集）
+
+   - Monaco Editorを使用してPythonコードを編集
+
+   - Ctrl+Enterでコード実行
+
+   - 初回実行時に自動的に`floating-output-window`を作成（既に存在する場合は作成しない、1:1の関係）
+
+2. **`floating-output-window`** (`src/components/floating-output-window.tsx`)
+
+   - Jupyterのセル出力を表示
+
+   - テキスト、HTML、画像、エラーなど多様な出力形式に対応
+
+   - エディタウィンドウと1:1で紐付けられている（`linkedWindowId`で管理）
+
+   - エディタウィンドウを閉じると、関連する出力ウィンドウも自動的に閉じる
+
+3. **`floating-markdown-window`** (`src/components/floating-markdown-window.tsx`)
+
+   - Jupyterのマークダウンセル（編集・表示）
+
+   - マークダウンをHTMLにレンダリングして表示
+
+   - 編集モードとプレビューモードを切り替え可能
+
+   - `marked`ライブラリを使用してレンダリング
+
+### アーキテクチャ
+
+```
+src/
+├── index.ts                      # JupyterLab拡張のエントリーポイント
+├── widget.tsx                    # メインReactコンポーネント（Three.jsシーンとウィンドウ管理）
+├── scene-manager.ts              # Three.jsシーン、カメラ、レンダラーの管理
+├── floating-window-manager.ts    # フローティングウィンドウのライフサイクル管理
+├── components/
+│   ├── floating-editor-window.tsx    # コードセルウィンドウ
+│   ├── floating-output-window.tsx    # 出力ウィンドウ
+│   └── floating-markdown-window.tsx  # マークダウンウィンドウ
+└── services/
+    └── floating-window-css2d.service.ts  # CSS2DRendererと3D空間への配置を管理
+```
+
+### 主要な実装詳細
+
+- **ウィンドウ管理**: `FloatingWindowManager`クラスがウィンドウの作成、削除、位置・サイズ管理を担当
+
+- **Kernel接続**: `@jupyterlab/services`の`KernelManager`を使用してJupyter Kernelに接続
+
+- **Three.js統合**: `SceneManager`クラスがThree.jsのシーン、カメラ、レンダラーを管理。`CSS2DRenderer`を使用してフローティングウィンドウを3D空間に配置
+
+- **ウィンドウ操作**: すべてのウィンドウでドラッグ、リサイズ、最小化、閉じる機能を実装
+
+### 依存関係
+
+- `three`: Three.js（3Dグラフィックス）
+
+- `monaco-editor`: コードエディタ
+
+- `marked`: マークダウンレンダリング
+
+- `@jupyterlab/services`: Jupyter Kernel接続
+
+- `react`, `react-dom`: UIコンポーネント
 
 ## セットアップ
 
@@ -78,13 +147,13 @@ jupyter lab
 
 ## 使用方法
 
-1. JupyterLabを起動します
-2. コマンドパレット（`Ctrl+Shift+C`）を開きます
-3. "Three Jupyter を開く" を検索して実行します
-4. カスタムUIが開きます
-5. コード入力欄にPythonコードを入力します
-6. 「実行」ボタンをクリックしてコードを実行します
-7. 実行結果が出力セクションに表示されます
+1. ツールバーの「+ Code」ボタンでコードセルを作成
+
+2. ツールバーの「+ Markdown」ボタンでマークダウンセルを作成
+
+3. エディタウィンドウでコードを実行すると、自動的に出力ウィンドウが作成される
+
+4. すべてのウィンドウはドラッグ・リサイズ可能
 
 ## プロジェクト構造
 
@@ -94,8 +163,16 @@ three-JupyterLab/
 │   ├── environment.yml   # Binder用の環境設定
 │   └── postBuild         # Binder用のビルドスクリプト
 ├── src/
-│   ├── index.ts          # 拡張のエントリーポイント
-│   └── widget.tsx        # Reactコンポーネント
+│   ├── index.ts                      # JupyterLab拡張のエントリーポイント
+│   ├── widget.tsx                    # メインReactコンポーネント（Three.jsシーンとウィンドウ管理）
+│   ├── scene-manager.ts              # Three.jsシーン、カメラ、レンダラーの管理
+│   ├── floating-window-manager.ts    # フローティングウィンドウのライフサイクル管理
+│   ├── components/
+│   │   ├── floating-editor-window.tsx    # コードセルウィンドウ
+│   │   ├── floating-output-window.tsx    # 出力ウィンドウ
+│   │   └── floating-markdown-window.tsx  # マークダウンウィンドウ
+│   └── services/
+│       └── floating-window-css2d.service.ts  # CSS2DRendererと3D空間への配置を管理
 ├── style/
 │   └── index.css         # スタイル
 ├── lib/                  # ビルド出力（自動生成）
@@ -129,6 +206,24 @@ jlpm clean
 ```powershell
 jlpm clean:all
 ```
+
+### 注意事項
+
+- `home-screen.component.ts`は不要（削除済み）
+
+- エディタウィンドウと出力ウィンドウは常に1:1の関係
+
+- ウィンドウはCSS2DRendererを使用してThree.jsの3D空間に配置されている
+
+### 参考実装
+
+`BackcastPro-dashbord`プロジェクトの以下のファイルを参考に実装されています：
+
+- `floating-editor-manager.component.ts`: ウィンドウ管理のアーキテクチャ
+
+- `floating-editor-window.component.ts`: エディタウィンドウの実装パターン
+
+- `floating-chart-window.component.ts`: 出力ウィンドウの実装パターン
 
 ## トラブルシューティング
 
