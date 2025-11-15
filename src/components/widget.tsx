@@ -50,22 +50,18 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
   // ipynbファイルの内容を読み込む
   useEffect(() => {
     if (!context) {
-      console.log('No context provided, skipping notebook load');
       return;
     }
 
     if (notebookLoadedRef.current) {
-      console.log('Notebook already loaded, skipping');
       return;
     }
 
     const loadNotebook = async () => {
       try {
-        console.log('Loading notebook from context:', context.path);
         
         // モデルが準備されるまで待つ
         await context.ready;
-        console.log('Context ready');
         
         const model = context.model;
         if (!model) {
@@ -75,39 +71,30 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
 
         // windowManagerが初期化されるまで待つ
         if (!windowManagerRef.current) {
-          console.log('WindowManager not ready yet, waiting...');
           setTimeout(loadNotebook, 200);
           return;
         }
 
-        console.log('WindowManager ready, loading notebook data');
-        
         // NotebookのJSONデータを取得
         const notebookData = model.toJSON() as any;
-        console.log('Notebook data loaded, cells count:', notebookData?.cells?.length || 0);
         
         // セルを解析
         const cells = parseNotebook(notebookData);
-        console.log('Parsed cells:', cells.length);
         if (cells.length === 0) {
-          console.log('No cells found in notebook');
           return;
         }
 
         // 既存のウィンドウをクリア
         windowManagerRef.current.clearAllWindows();
-        console.log('Cleared existing windows');
 
         // セルを分類
         const { codeCells, markdownCells } = categorizeCells(cells);
-        console.log(`Found ${codeCells.length} code cells and ${markdownCells.length} markdown cells`);
 
         // コードセルをエディタウィンドウとして作成
         codeCells.forEach((cell, index) => {
           const source = typeof cell.source === 'string' ? cell.source : cell.source.join('');
           const title = `Code Cell ${index + 1}`;
           const windowId = windowManagerRef.current?.createWindow('editor', title, source);
-          console.log(`Created code cell window ${index + 1}: ${windowId}`);
           
           // 出力がある場合は出力ウィンドウも作成
           if (cell.outputs && cell.outputs.length > 0 && windowId) {
@@ -130,57 +117,42 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
         // notifyListeners()が自動的に呼ばれるはずだが、念のため手動で更新
         if (windowManagerRef.current) {
           const currentWindows = windowManagerRef.current.getAllWindows();
-          console.log(`Updating windows state with ${currentWindows.length} windows`);
-          console.log('Floating container available:', !!floatingContainer);
-          console.log('Output container available:', !!outputContainer);
           setWindows(currentWindows);
           
           // 状態更新を確実にするため、少し遅延させて再度更新
           setTimeout(() => {
             const updatedWindows = windowManagerRef.current?.getAllWindows();
             if (updatedWindows) {
-              console.log('Second update with', updatedWindows.length, 'windows');
               setWindows(updatedWindows);
             }
           }, 100);
         }
 
         notebookLoadedRef.current = true;
-        console.log(`Successfully loaded ${cells.length} cells from notebook`);
       } catch (error) {
         console.error('Error loading notebook:', error);
         console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       }
     };
 
-    // シーンとコンテナが初期化されるまで待つ（最大10秒）
+    // シーンが初期化されるまで待つ（最大10秒）
     let attempts = 0;
-    const maxAttempts = 100; // 10秒（100ms * 100）
+    const maxAttempts = 50; // 5秒（100ms * 50）
     
     const checkAndLoad = () => {
       attempts++;
-      if (windowManagerRef.current && floatingContainer && outputContainer) {
-        console.log('WindowManager and containers ready, starting notebook load');
+      if (windowManagerRef.current) {
         loadNotebook();
       } else if (attempts < maxAttempts) {
-        if (attempts % 10 === 0) {
-          console.log(`Waiting for initialization... (attempt ${attempts}/${maxAttempts})`);
-          console.log(`  WindowManager: ${!!windowManagerRef.current}`);
-          console.log(`  FloatingContainer: ${!!floatingContainer}`);
-          console.log(`  OutputContainer: ${!!outputContainer}`);
-        }
         setTimeout(checkAndLoad, 100);
       } else {
-        console.error('Containers not initialized after maximum attempts');
-        console.error(`  WindowManager: ${!!windowManagerRef.current}`);
-        console.error(`  FloatingContainer: ${!!floatingContainer}`);
-        console.error(`  OutputContainer: ${!!outputContainer}`);
+        console.error('WindowManager not initialized after maximum attempts');
       }
     };
 
     // 少し遅延させてからチェック開始（シーンの初期化を待つ）
     setTimeout(checkAndLoad, 500);
-  }, [context, floatingContainer, outputContainer]);
+  }, [context]);
 
   /**
    * Three.jsシーンを初期化
@@ -208,11 +180,9 @@ const ThreeJupyterComponent: React.FC<ThreeJupyterProps> = ({ context }) => {
       
       // ウィンドウ変更リスナーを登録
       windowManagerRef.current.addListener((updatedWindows) => {
-        console.log('WindowManager listener called with', updatedWindows.length, 'windows');
         setWindows(updatedWindows);
       });
 
-      console.log('Three.js scene initialized');
     } catch (err) {
       console.error('Scene initialization error:', err);
       setError('Failed to initialize 3D scene');

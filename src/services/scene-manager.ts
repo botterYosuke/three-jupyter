@@ -62,6 +62,7 @@ export class SceneManager {
     this.floatingWindowCSS2DService = new FloatingWindowCSS2DService();
     this.floatingWindowCSS2DService.initializeWithRenderer(this.css2DRenderer);
     this.floatingWindowCSS2DService.attachToScene(this.scene);
+    // 出力コンテナをシーンにアタッチ
     this.floatingWindowCSS2DService.attachOutputContainerToScene(this.scene);
 
     // OrbitControlsの初期化

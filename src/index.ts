@@ -18,7 +18,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
   autoStart: true,
   optional: [ICommandPalette, ILauncher],
   activate: (app: JupyterFrontEnd, palette: ICommandPalette | null, launcher: ILauncher | null) => {
-    console.log('JupyterLab extension three-jupyterlab is activated!');
 
     // ウィジェットを作成する関数
     const createWidget = () => {
@@ -45,7 +44,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
         // ウィジェットを追加
         app.shell.add(widget, 'main');
         app.shell.activateById('three-jupyterlab');
-        console.log('Three Jupyter widget opened successfully');
       } catch (error) {
         console.error('Error creating widget:', error);
       }
@@ -80,18 +78,14 @@ const plugin: JupyterFrontEndPlugin<void> = {
     class ThreeJupyterWidgetFactory extends ABCWidgetFactory<IDocumentWidget<Widget, INotebookModel>> {
       constructor(options: DocumentRegistry.IWidgetFactoryOptions<IDocumentWidget<Widget, INotebookModel>>) {
         super(options);
-        console.log('ThreeJupyterWidgetFactory created:', options);
       }
 
       protected createNewWidget(context: DocumentRegistry.IContext<INotebookModel>): IDocumentWidget<Widget, INotebookModel> {
-        console.log('ThreeJupyterWidgetFactory.createNewWidget called for:', context.path);
         const content = new ThreeJupyterWidget(context);
         const widget = new DocumentWidget({ content, context });
         widget.id = `three-jupyterlab-${context.path}`;
         widget.title.label = context.path.split('/').pop() || 'Three Jupyter';
         widget.title.closable = true;
-
-        console.log('Three Jupyter widget created for notebook:', context.path);
         return widget;
       }
     }
@@ -104,7 +98,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
     });
 
     app.docRegistry.addWidgetFactory(factory);
-    console.log('Three Jupyter widget factory registered for notebook files');
 
     // JupyterLabの復元が完了してからウィジェットを開く（非ブロッキング）
     // app.restored を待たずに、シェルが利用可能になったら開く
