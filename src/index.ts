@@ -16,21 +16,29 @@ const plugin: JupyterFrontEndPlugin<void> = {
   activate: (app: JupyterFrontEnd, palette: ICommandPalette | null) => {
     console.log('JupyterLab extension three-jupyterlab is activated!');
 
+    // ウィジェットを作成する関数
+    const createWidget = () => {
+      // ウィジェットを作成
+      const content = new ThreeJupyterWidget();
+      const widget = new MainAreaWidget<ThreeJupyterWidget>({ content });
+      widget.id = 'three-jupyterlab';
+      widget.title.label = 'Three Jupyter';
+      widget.title.closable = true;
+
+      // ウィジェットを追加
+      app.shell.add(widget, 'main');
+    };
+
+    // 起動時に自動的にウィジェットを開く
+    createWidget();
+
     // コマンドを登録
     const command = 'three-jupyterlab:open';
     app.commands.addCommand(command, {
       label: 'Three Jupyter を開く',
       caption: 'カスタムUIでPythonコードを実行',
       execute: () => {
-        // ウィジェットを作成
-        const content = new ThreeJupyterWidget();
-        const widget = new MainAreaWidget<ThreeJupyterWidget>({ content });
-        widget.id = 'three-jupyterlab';
-        widget.title.label = 'Three Jupyter';
-        widget.title.closable = true;
-
-        // ウィジェットを追加
-        app.shell.add(widget, 'main');
+        createWidget();
       }
     });
 
