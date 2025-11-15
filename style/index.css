@@ -1,0 +1,190 @@
+.three-jupyter-widget {
+  padding: 0;
+  overflow: auto;
+}
+
+.three-jupyter-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.three-jupyter-container header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.three-jupyter-container header h1 {
+  font-size: 2.5em;
+  margin-bottom: 10px;
+  margin-top: 0;
+}
+
+.three-jupyter-container .subtitle {
+  font-size: 1.1em;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.three-jupyter-container .main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.three-jupyter-container .status-bar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: var(--jp-layout-color1, white);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.three-jupyter-container .status-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.three-jupyter-container .status-label {
+  font-weight: 500;
+}
+
+.three-jupyter-container .status-indicator {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.three-jupyter-container .status-indicator.ready {
+  background-color: #10b981;
+  color: white;
+}
+
+.three-jupyter-container .status-indicator.not-ready {
+  background-color: #ef4444;
+  color: white;
+}
+
+.three-jupyter-container .code-section,
+.three-jupyter-container .output-section {
+  background: var(--jp-layout-color1, white);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.three-jupyter-container .section-header {
+  background: var(--jp-layout-color2, #f8f9fa);
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--jp-border-color1, #e9ecef);
+}
+
+.three-jupyter-container .section-header h2 {
+  margin: 0;
+  font-size: 1.3em;
+  color: var(--jp-content-font-color1, #333);
+}
+
+.three-jupyter-container .code-input {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 200px;
+  background: var(--jp-layout-color2, #f8f9fa);
+  border-top: 1px solid var(--jp-border-color1, #e9ecef);
+  color: var(--jp-content-font-color1, #333);
+  box-sizing: border-box;
+}
+
+.three-jupyter-container .code-input:focus {
+  outline: none;
+  background: var(--jp-layout-color1, white);
+}
+
+.three-jupyter-container .button-group {
+  padding: 15px 20px;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid var(--jp-border-color1, #e9ecef);
+}
+
+.three-jupyter-container .btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.three-jupyter-container .btn-primary {
+  background-color: #667eea;
+  color: white;
+}
+
+.three-jupyter-container .btn-primary:hover:not(:disabled) {
+  background-color: #5568d3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.three-jupyter-container .btn-primary:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.three-jupyter-container .btn-secondary {
+  background-color: #6b7280;
+  color: white;
+}
+
+.three-jupyter-container .btn-secondary:hover {
+  background-color: #4b5563;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.three-jupyter-container .btn-execute {
+  flex: 1;
+  max-width: 200px;
+}
+
+.three-jupyter-container .output-container {
+  padding: 20px;
+  min-height: 200px;
+  max-height: 500px;
+  overflow-y: auto;
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
+
+.three-jupyter-container .output-text {
+  margin: 0;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.6;
+}
+
+.three-jupyter-container .error-message {
+  padding: 15px 20px;
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-top: 1px solid #fecaca;
+  font-weight: 500;
+}
+

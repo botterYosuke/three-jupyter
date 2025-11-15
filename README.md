@@ -1,13 +1,13 @@
-# Three Jupyter
+# Three JupyterLab
 
-Jupyter Server + Jupyter Kernel Gateway を使用した、Angular で完全に UI を自作したサンプルアプリケーションです。
+JupyterLab拡張として実装された、カスタムUIでPythonコードを実行するアプリケーションです。
 
 ## 機能
 
-- Jupyter Kernel の起動・停止
-- Python コードの実行
-- 実行結果の表示
-- モダンな UI デザイン
+- JupyterLab拡張として統合
+- JupyterLabのKernel APIを使用したPythonコード実行
+- モダンなUIデザイン
+- リアルタイムでの実行結果表示
 
 ## セットアップ
 
@@ -15,101 +15,124 @@ Jupyter Server + Jupyter Kernel Gateway を使用した、Angular で完全に U
 
 - Node.js (v18 以上)
 - Python (v3.8 以上)
-- npm または yarn
+- JupyterLab (v4.0 以上)
 
-### 1. Python 依存関係のインストール
-
-```powershell
-pip install -r requirements.txt
-```
-
-### 2. Angular 依存関係のインストール
+### 1. 依存関係のインストール
 
 ```powershell
+cd C:\Users\sasai\Documents\three-JupyterLab
 npm install
-```
-
-## 実行方法
-
-### 1. Jupyter Kernel Gateway の起動
-
-ターミナル 1 で以下を実行:
-
-```powershell
-jupyter kernelgateway --config=jupyter_kernel_gateway_config.py
-```
-
-Kernel Gateway が `http://127.0.0.1:8889` で起動します。
-
-### 2. Angular アプリケーションの起動
-
-ターミナル 2 で以下を実行:
-
-```powershell
-npm start
 ```
 
 または
 
 ```powershell
-ng serve
+jlpm install
 ```
 
-Angular アプリケーションが `http://localhost:4200` で起動します。
+### 2. 拡張のビルド
 
-### 3. ブラウザでアクセス
+```powershell
+jlpm build
+```
 
-ブラウザで `http://localhost:4200` を開いてください。
+### 3. JupyterLabへのインストール
+
+開発モードでインストール:
+
+```powershell
+jupyter labextension develop --overwrite .
+```
+
+または、本番モードでインストール:
+
+```powershell
+jupyter labextension install .
+```
+
+### 4. JupyterLabの起動
+
+```powershell
+jupyter lab
+```
 
 ## 使用方法
 
-1. アプリケーションを開くと、自動的に Kernel が起動します
-2. コード入力欄に Python コードを入力します
-3. 「実行」ボタンをクリックしてコードを実行します
-4. 実行結果が出力セクションに表示されます
+1. JupyterLabを起動します
+2. コマンドパレット（`Ctrl+Shift+C`）を開きます
+3. "Three Jupyter を開く" を検索して実行します
+4. カスタムUIが開きます
+5. コード入力欄にPythonコードを入力します
+6. 「実行」ボタンをクリックしてコードを実行します
+7. 実行結果が出力セクションに表示されます
 
 ## プロジェクト構造
 
 ```
-three-jupyter/
+three-JupyterLab/
 ├── src/
-│   ├── app/
-│   │   ├── app.component.ts      # メインコンポーネント
-│   │   ├── app.component.html     # テンプレート
-│   │   ├── app.component.css      # スタイル
-│   │   └── jupyter.service.ts     # Jupyter 通信サービス
-│   ├── index.html
-│   ├── main.ts
-│   └── styles.css
-├── jupyter_server_config.py       # Jupyter Server 設定
-├── jupyter_kernel_gateway_config.py  # Kernel Gateway 設定
+│   ├── index.ts          # 拡張のエントリーポイント
+│   └── widget.tsx        # Reactコンポーネント
+├── style/
+│   └── index.css         # スタイル
+├── lib/                  # ビルド出力（自動生成）
 ├── package.json
-├── requirements.txt
+├── tsconfig.json
 └── README.md
 ```
 
-## 注意事項
+## 開発
 
-- Kernel Gateway は先に起動しておく必要があります
-- CORS エラーが発生する場合は、Kernel Gateway の設定を確認してください
-- 開発環境でのみ使用してください（本番環境では適切なセキュリティ設定が必要です）
+### ウォッチモードでビルド
+
+```powershell
+jlpm watch
+```
+
+別のターミナルでJupyterLabを起動:
+
+```powershell
+jupyter lab --watch
+```
+
+### クリーンアップ
+
+```powershell
+jlpm clean
+```
+
+すべてをクリーンアップ:
+
+```powershell
+jlpm clean:all
+```
 
 ## トラブルシューティング
 
-### Kernel が起動しない場合
+### 拡張が表示されない場合
 
-- Kernel Gateway が正しく起動しているか確認してください
-- `http://127.0.0.1:8889/api/kernels` にアクセスして、API が利用可能か確認してください
+1. 拡張が正しくビルドされているか確認:
+   ```powershell
+   jlpm build
+   ```
 
-### CORS エラーが発生する場合
+2. JupyterLabを再起動:
+   ```powershell
+   jupyter lab --clean
+   ```
 
-`jupyter_kernel_gateway_config.py` の設定を確認してください:
+3. 拡張がインストールされているか確認:
+   ```powershell
+   jupyter labextension list
+   ```
 
-```python
-c.KernelGatewayApp.allow_origin = '*'
-c.KernelGatewayApp.allow_headers = '*'
-c.KernelGatewayApp.allow_methods = '*'
-```
+### Kernelが起動しない場合
+
+- JupyterLabが正しくインストールされているか確認してください
+- Pythonカーネルが利用可能か確認してください:
+  ```powershell
+  jupyter kernelspec list
+  ```
 
 ## ライセンス
 
