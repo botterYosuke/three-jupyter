@@ -4,6 +4,8 @@ lib/
 dist/
 build/
 .yarn/
+yarn.lock
+package-lock.json
 
 # Node
 node_modules/
