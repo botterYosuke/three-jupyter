@@ -185,13 +185,9 @@ export const FloatingOutputWindow: React.FC<FloatingOutputWindowProps> = ({
     };
   }, [isDragging, isResizing, dragStart, resizeStart]);
 
-  if (windowData.isMinimized) {
-    return null;
-  }
-
   return (
     <div
-      className="floating-window floating-output-window"
+      className={`floating-window floating-output-window ${windowData.isMinimized ? 'minimized' : ''}`}
       style={{
         position: 'absolute',
         left: `${windowData.x}px`,
@@ -225,27 +221,31 @@ export const FloatingOutputWindow: React.FC<FloatingOutputWindowProps> = ({
         </div>
       </div>
 
-      <div className="window-content">
-        <div ref={outputContainerRef} className="output-container">
-          {outputs.length === 0 ? (
-            <div className="output-empty">Output will appear here...</div>
-          ) : (
-            outputs.map((output, index) => (
-              <div key={index} className={`output-item output-${output.type}`}>
-                {output.type === 'error' ? (
-                  <pre className="output-error">{output.content}</pre>
-                ) : output.content.startsWith('<') ? (
-                  <div dangerouslySetInnerHTML={{ __html: output.content }} />
-                ) : (
-                  <pre className="output-text">{output.content}</pre>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      {!windowData.isMinimized && (
+        <>
+          <div className="window-content">
+            <div ref={outputContainerRef} className="output-container">
+              {outputs.length === 0 ? (
+                <div className="output-empty">Output will appear here...</div>
+              ) : (
+                outputs.map((output, index) => (
+                  <div key={index} className={`output-item output-${output.type}`}>
+                    {output.type === 'error' ? (
+                      <pre className="output-error">{output.content}</pre>
+                    ) : output.content.startsWith('<') ? (
+                      <div dangerouslySetInnerHTML={{ __html: output.content }} />
+                    ) : (
+                      <pre className="output-text">{output.content}</pre>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
 
-      <div className="resize-handle" onMouseDown={handleResizeMouseDown} />
+          <div className="resize-handle" onMouseDown={handleResizeMouseDown} />
+        </>
+      )}
     </div>
   );
 };

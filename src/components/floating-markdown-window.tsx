@@ -154,13 +154,9 @@ export const FloatingMarkdownWindow: React.FC<FloatingMarkdownWindowProps> = ({
     };
   }, [isDragging, isResizing, dragStart, resizeStart]);
 
-  if (windowData.isMinimized) {
-    return null;
-  }
-
   return (
     <div
-      className="floating-window floating-markdown-window"
+      className={`floating-window floating-markdown-window ${windowData.isMinimized ? 'minimized' : ''}`}
       style={{
         position: 'absolute',
         left: `${windowData.x}px`,
@@ -194,28 +190,32 @@ export const FloatingMarkdownWindow: React.FC<FloatingMarkdownWindowProps> = ({
         </div>
       </div>
 
-      <div className="window-content">
-        {isEditMode ? (
-          <textarea
-            ref={textareaRef}
-            className="markdown-editor"
-            value={markdown}
-            onChange={handleMarkdownChange}
-            onKeyDown={handleTextareaKeyDown}
-            placeholder="Enter markdown here..."
-          />
-        ) : (
-          <div
-            className="markdown-preview"
-            tabIndex={0}
-            onDoubleClick={handlePreviewToEdit}
-            onKeyDown={handlePreviewKeyDown}
-            dangerouslySetInnerHTML={{ __html: renderMarkdown() }}
-          />
-        )}
-      </div>
+      {!windowData.isMinimized && (
+        <>
+          <div className="window-content">
+            {isEditMode ? (
+              <textarea
+                ref={textareaRef}
+                className="markdown-editor"
+                value={markdown}
+                onChange={handleMarkdownChange}
+                onKeyDown={handleTextareaKeyDown}
+                placeholder="Enter markdown here..."
+              />
+            ) : (
+              <div
+                className="markdown-preview"
+                tabIndex={0}
+                onDoubleClick={handlePreviewToEdit}
+                onKeyDown={handlePreviewKeyDown}
+                dangerouslySetInnerHTML={{ __html: renderMarkdown() }}
+              />
+            )}
+          </div>
 
-      <div className="resize-handle" onMouseDown={handleResizeMouseDown} />
+          <div className="resize-handle" onMouseDown={handleResizeMouseDown} />
+        </>
+      )}
     </div>
   );
 };

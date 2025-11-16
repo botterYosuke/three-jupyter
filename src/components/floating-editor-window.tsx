@@ -184,13 +184,9 @@ export const FloatingEditorWindow: React.FC<FloatingEditorWindowProps> = ({
     };
   }, [isDragging, isResizing, dragStart, resizeStart]);
 
-  if (windowData.isMinimized) {
-    return null;
-  }
-
   return (
     <div
-      className="floating-window floating-editor-window"
+      className={`floating-window floating-editor-window ${windowData.isMinimized ? 'minimized' : ''}`}
       style={{
         position: 'absolute',
         left: `${windowData.x}px`,
@@ -225,11 +221,15 @@ export const FloatingEditorWindow: React.FC<FloatingEditorWindowProps> = ({
         </div>
       </div>
 
-      <div className="window-content">
-        <div ref={editorRef} className="editor-host" />
-      </div>
+      {!windowData.isMinimized && (
+        <>
+          <div className="window-content">
+            <div ref={editorRef} className="editor-host" />
+          </div>
 
-      <div className="resize-handle" onMouseDown={handleResizeMouseDown} />
+          <div className="resize-handle" onMouseDown={handleResizeMouseDown} />
+        </>
+      )}
     </div>
   );
 };

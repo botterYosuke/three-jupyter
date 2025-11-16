@@ -279,6 +279,11 @@
 }
 
 .floating-window.minimized {
+  height: auto;
+}
+
+.floating-window.minimized .window-content,
+.floating-window.minimized .resize-handle {
   display: none;
 }
 
