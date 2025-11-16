@@ -49,6 +49,7 @@ dev = [
 Homepage = "https://github.com/botterYosuke/three-jupyter"
 Repository = "https://github.com/botterYosuke/three-jupyter"
 Issues = "https://github.com/botterYosuke/three-jupyter/issues"
+Logo = "https://raw.githubusercontent.com/botterYosuke/three-jupyter/main/docs/img/logo.drawio.svg"
 
 [tool.jupyter-packaging.options]
 skip-if-exists = ["three_jupyterlab/labextension/static"]
