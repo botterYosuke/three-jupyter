@@ -17,13 +17,10 @@ npm run build:prod
 echo "Step 3: Installing the extension..."
 pip install -e .
 
-echo "Step 4: Installing JupyterLab extension..."
-jupyter labextension install . --no-build
-
-echo "Step 5: Building JupyterLab (this may take a few minutes)..."
+echo "Step 4: Building JupyterLab (this may take a few minutes)..."
 jupyter lab build --minimize=False
 
-echo "Step 6: Verifying extension installation..."
+echo "Step 5: Verifying extension installation..."
 jupyter labextension list
 
 echo "=========================================="
