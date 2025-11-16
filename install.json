@@ -1,6 +1,7 @@
 {
   "packageManager": "npm",
   "baseUrl": ".",
-  "packages": []
+  "packages": [],
+  "packageName": "three-jupyterlab"
 }
 

@@ -41,6 +41,7 @@ setup_args = dict(
     extras_require={
         "dev": [
             "jupyterlab>=4.0.0",
+            "jupyter-packaging>=0.10",
         ],
     },
     python_requires=">=3.8",
@@ -53,7 +54,7 @@ try:
         get_data_files
     )
     post_develop = npm_builder(
-        build_cmd="build:prod", source_dir=".", build_dir=lab_path
+        build_cmd="build", source_dir=".", build_dir=lab_path
     )
     setup_args["cmdclass"] = wrap_installers(
         post_develop=post_develop, ensured_targets=ensured_targets

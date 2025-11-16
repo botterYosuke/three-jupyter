@@ -101,6 +101,46 @@ src/
 - Python (v3.8 以上)
 - JupyterLab (v4.0 以上)
 
+### 0. 初回セットアップ（重要）
+
+**JupyterLab 4.0以降では、拡張機能を有効にするためにPythonパッケージのインストールが必要です。**
+
+以下のコマンドを実行してPythonパッケージをインストールしてください：
+
+```powershell
+pip install -e .
+```
+
+これにより、`setup.py`に記載されている依存関係（JupyterLab、jupyter-packaging）もインストールされます。
+
+**注意**: `jupyter labextension develop` コマンドが動作しない場合があります。その場合は、以下の手順を実行してください：
+
+1. 拡張機能をビルド：
+```powershell
+npm run build
+```
+
+2. 拡張機能を手動でインストール：
+```powershell
+# JupyterLabの拡張機能ディレクトリを取得
+$jupyterPath = python -c "import jupyterlab; import os; print(os.path.join(os.path.dirname(jupyterlab.__file__), '..', '..', 'share', 'jupyter', 'labextensions'))"
+$dest = Join-Path $jupyterPath "three-jupyterlab"
+
+# 拡張機能ディレクトリを作成
+New-Item -ItemType Directory -Path $dest -Force
+
+# 拡張機能ファイルをコピー
+Copy-Item -Path "three_jupyterlab\labextension\*" -Destination $dest -Recurse -Force
+
+# install.jsonをコピー
+Copy-Item -Path "install.json" -Destination "$dest\install.json" -Force
+```
+
+3. JupyterLabを再ビルド：
+```powershell
+jupyter lab build --dev-build
+```
+
 ### 1. 依存関係のインストール
 
 ```powershell
@@ -121,13 +161,15 @@ jlpm install
 npm run dev
 ```
 
+**注意**: `npm run dev` を実行した際に `jupyter labextension develop` がエラーになる場合があります。その場合は、上記の「0. 初回セットアップ」の手動インストール手順を実行してください。
+
 **2回目以降（開発モードインストール済みの場合）:**
 
 ```powershell
 npm run dev:quick
 ```
 
-これで、ビルド → インストール → JupyterLab起動が一度のコマンドで実行されます。
+これで、ビルド → JupyterLab起動が一度のコマンドで実行されます。
 
 ### 3. 本番モードでの起動
 
