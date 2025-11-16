@@ -1,0 +1,72 @@
+[build-system]
+requires = ["jupyter-packaging>=0.10", "setuptools>=40.8.0", "wheel"]
+build-backend = "jupyter_packaging.build_api"
+
+[project]
+name = "three-jupyterlab"
+version = "1.0.0"
+description = "JupyterLab extension with custom UI for Python code execution"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    { name="botterYosuke" },
+]
+keywords = [
+    "jupyter",
+    "jupyterlab",
+    "jupyterlab-extension",
+    "three.js",
+    "3d"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Jupyter",
+    "Framework :: Jupyter :: JupyterLab",
+    "Framework :: Jupyter :: JupyterLab :: 4",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "jupyterlab>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "jupyterlab>=4.0.0",
+    "jupyter-packaging>=0.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/botterYosuke/three-jupyter"
+Repository = "https://github.com/botterYosuke/three-jupyter"
+Issues = "https://github.com/botterYosuke/three-jupyter/issues"
+
+[tool.jupyter-packaging.options]
+skip-if-exists = ["three_jupyterlab/labextension/static"]
+ensured-targets = [
+    "three_jupyterlab/labextension/package.json",
+    "three_jupyterlab/labextension/static/style.js"
+]
+
+[tool.jupyter-packaging.builder]
+func = "jupyter_packaging.npm_builder"
+build_cmd = "build:prod"
+source_dir = "."
+build_dir = "three_jupyterlab/labextension"
+
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["**/*"]
+

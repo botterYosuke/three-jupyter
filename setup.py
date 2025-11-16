@@ -17,34 +17,16 @@ ensured_targets = [
     str(lab_path / "static" / "style.js")
 ]
 
+# Data files specification for JupyterLab extension installation
 data_files_spec = [
     ("share/jupyter/labextensions/three-jupyterlab", str(lab_path), "**"),
     ("share/jupyter/labextensions/three-jupyterlab", str(HERE), "install.json"),
 ]
 
 setup_args = dict(
-    name=name,
-    version="1.0.0",
-    description="JupyterLab extension with custom UI for Python code execution",
-    long_description=HERE.joinpath("README.md").read_text(encoding="utf-8"),
-    long_description_content_type="text/markdown",
-    author="",
-    author_email="",
-    url="https://github.com/your-username/three-jupyterlab",
-    license="MIT",
     packages=[],
     zip_safe=False,
     include_package_data=True,
-    install_requires=[
-        "jupyterlab>=4.0.0",
-    ],
-    extras_require={
-        "dev": [
-            "jupyterlab>=4.0.0",
-            "jupyter-packaging>=0.10",
-        ],
-    },
-    python_requires=">=3.8",
 )
 
 try:
