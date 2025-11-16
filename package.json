@@ -22,10 +22,11 @@
   },
   "scripts": {
     "build": "npm run build:lib && npm run build:labextension:dev",
-    "build:prod": "npm run clean && npm run build:lib && npm run build:labextension",
+    "build:prod": "npm run clean && npm run build:lib:prod && npm run build:labextension",
     "build:labextension": "jupyter labextension build .",
     "build:labextension:dev": "jupyter labextension build . --dev-build",
     "build:lib": "tsc",
+    "build:lib:prod": "tsc -p tsconfig.prod.json",
     "clean": "npm run clean:lib",
     "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
     "clean:labextension": "rimraf three_jupyterlab/labextension",
@@ -33,7 +34,10 @@
     "eslint": "eslint . --ext .ts,.tsx --fix",
     "eslint:check": "eslint . --ext .ts,.tsx",
     "prepack": "npm run clean && npm run build:prod",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "dev": "npm run build && jupyter labextension develop --overwrite . && start jupyter lab",
+    "dev:quick": "npm run build && start jupyter lab",
+    "start": "npm run build && jupyter labextension install . && start jupyter lab"
   },
   "dependencies": {
     "@jupyterlab/application": "^4.0.0",

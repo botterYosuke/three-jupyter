@@ -113,19 +113,35 @@ npm install
 jlpm install
 ```
 
-### 2. 拡張のビルド
+### 2. 開発環境の起動（推奨）
+
+**初回のみ（開発モードでインストール）:**
+
+```powershell
+npm run dev
+```
+
+**2回目以降（開発モードインストール済みの場合）:**
+
+```powershell
+npm run dev:quick
+```
+
+これで、ビルド → インストール → JupyterLab起動が一度のコマンドで実行されます。
+
+### 3. 本番モードでの起動
+
+```powershell
+npm run start
+```
+
+### 4. 手動でのセットアップ（従来の方法）
+
+拡張のビルド:
 
 ```powershell
 npm run build
 ```
-
-または
-
-```powershell
-jlpm build
-```
-
-### 3. JupyterLabへのインストール
 
 開発モードでインストール:
 
@@ -133,13 +149,13 @@ jlpm build
 jupyter labextension develop --overwrite .
 ```
 
-または、本番モードでインストール:
+本番モードでインストール:
 
 ```powershell
 jupyter labextension install .
 ```
 
-### 4. JupyterLabの起動
+JupyterLabの起動:
 
 ```powershell
 jupyter lab
@@ -147,9 +163,9 @@ jupyter lab
 
 ## 使用方法
 
-1. ツールバーの「+ Code」ボタンでコードセルを作成
+1. ツールバーの「+」ボタンでコードセルを作成
 
-2. ツールバーの「+ Markdown」ボタンでマークダウンセルを作成
+2. ツールバーの「i」ボタンでマークダウンセルを作成
 
 3. エディタウィンドウでコードを実行すると、自動的に出力ウィンドウが作成される
 
@@ -176,17 +192,41 @@ three-JupyterLab/
 ├── style/
 │   └── index.css         # スタイル
 ├── lib/                  # ビルド出力（自動生成）
+├── .vscode/              # VS Code/Cursorデバッグ設定
+│   ├── launch.json       # デバッグ設定
+│   └── tasks.json        # ビルドタスク
 ├── package.json
-├── tsconfig.json
+├── tsconfig.json         # 開発用TypeScript設定（sourceMap: true）
+├── tsconfig.prod.json    # 本番用TypeScript設定（sourceMap: false）
 └── README.md
 ```
 
 ## 開発
 
+### クイックスタート
+
+**開発モードで起動（初回のみ）:**
+
+```powershell
+npm run dev
+```
+
+**開発モードで起動（2回目以降）:**
+
+```powershell
+npm run dev:quick
+```
+
+### ビルドスクリプト
+
+- `npm run build` - 開発用ビルド（ソースマップ有効）
+- `npm run build:prod` - 本番用ビルド（ソースマップ無効）
+- `npm run watch` - TypeScriptのウォッチモード
+
 ### ウォッチモードでビルド
 
 ```powershell
-jlpm watch
+npm run watch
 ```
 
 別のターミナルでJupyterLabを起動:
@@ -195,16 +235,25 @@ jlpm watch
 jupyter lab --watch
 ```
 
+### デバッグ
+
+VS Code/CursorでF5を押すか、「実行とデバッグ」から「Debug JupyterLab Extension」を選択すると、ブレークポイントを使ったデバッグが可能です。
+
+詳細:
+- `.vscode/launch.json` - デバッグ設定
+- `tsconfig.json` - 開発用設定（`sourceMap: true`）
+- `tsconfig.prod.json` - 本番用設定（`sourceMap: false`）
+
 ### クリーンアップ
 
 ```powershell
-jlpm clean
+npm run clean
 ```
 
 すべてをクリーンアップ:
 
 ```powershell
-jlpm clean:all
+npm run clean:all
 ```
 
 ### 注意事項

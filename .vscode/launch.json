@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug JupyterLab Extension",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8888/lab",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack:///./*": "${workspaceFolder}/*",
+        "webpack:///*": "*"
+      },
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Attach to JupyterLab",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack:///./*": "${workspaceFolder}/*",
+        "webpack:///*": "*"
+      }
+    }
+  ]
+}
+

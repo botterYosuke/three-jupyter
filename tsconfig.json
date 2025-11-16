@@ -19,7 +19,8 @@
     "strictNullChecks": true,
     "target": "ES2018",
     "jsx": "react",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "sourceMap": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "lib", "**/*.spec.ts", "**/*.spec.tsx"]
