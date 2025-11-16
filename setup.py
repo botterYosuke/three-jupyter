@@ -24,7 +24,8 @@ data_files_spec = [
 ]
 
 setup_args = dict(
-    packages=[],
+    name=name,
+    packages=["three_jupyterlab"],
     zip_safe=False,
     include_package_data=True,
 )

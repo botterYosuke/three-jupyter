@@ -1,5 +1,5 @@
 [build-system]
-requires = ["jupyter-packaging>=0.10", "setuptools>=40.8.0", "wheel"]
+requires = ["jupyter-packaging>=0.10", "setuptools>=40.8.0", "wheel", "pip"]
 build-backend = "jupyter_packaging.build_api"
 
 [project]
@@ -26,7 +26,6 @@ classifiers = [
     "Framework :: Jupyter :: JupyterLab :: 4",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",

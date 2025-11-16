@@ -35,7 +35,7 @@
     "eslint:check": "eslint . --ext .ts,.tsx",
     "prepack": "npm run clean && npm run build:prod",
     "watch": "tsc -w",
-    "dev": "npm run build && jupyter labextension develop --overwrite . && start jupyter lab",
+    "dev": "npm run build && python setup.py develop && jupyter labextension develop --overwrite . && jupyter lab",
     "dev:quick": "npm run build && start jupyter lab",
     "start": "npm run build && jupyter labextension install . && start jupyter lab"
   },
