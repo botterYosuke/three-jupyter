@@ -13,7 +13,8 @@
         "webpack:///./*": "${workspaceFolder}/*",
         "webpack:///*": "*"
       },
-      "preLaunchTask": "build"
+      "preLaunchTask": "pre-debug",
+      "timeout": 30000
     },
     {
       "name": "Attach to JupyterLab",

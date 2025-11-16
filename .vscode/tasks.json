@@ -10,6 +10,38 @@
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "label": "start-jupyterlab-debug",
+      "type": "shell",
+      "command": "jupyter lab --no-browser --port=8888 --ServerApp.token='' --ServerApp.password='' --ServerApp.disable_check_xsrf=True",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*JupyterLab.*",
+          "endsPattern": ".*JupyterLab.*is running.*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "pre-debug",
+      "dependsOn": [
+        "build",
+        "start-jupyterlab-debug"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
     }
   ]
 }
