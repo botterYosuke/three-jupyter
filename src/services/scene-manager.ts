@@ -25,7 +25,7 @@ export class SceneManager {
 
     // シーンの作成
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x778C97);
+    this.scene.background = new THREE.Color(0x0a1628);
 
     // カメラの作成
     this.camera = new THREE.PerspectiveCamera(
